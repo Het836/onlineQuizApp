@@ -18,7 +18,7 @@ class Option {
       'SELECT * FROM options WHERE id = ?',
       [id]
     );
-    return rows[0return rows[0];
+    return rows[0];
   }
 
   // Get all options for a question

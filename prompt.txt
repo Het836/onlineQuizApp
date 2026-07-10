@@ -1,247 +1,299 @@
-You are continuing the Online Quiz System project.
+Continue building the Online Quiz System.
 
-IMPORTANT
+IMPORTANT:
 
-Do NOT redesign the website.
+Do not rebuild existing features.
 
-Do NOT implement login.
+Do not modify the database schema unless absolutely necessary.
 
-Do NOT implement quiz taking.
+Do not add authentication.
 
-Do NOT implement timers.
+Do not add timers.
 
-Do NOT implement scoring.
+Do not add scoring.
 
-Only complete Phase 2.
+Only implement Phase 3.
 
-The existing Phase 1 project must remain working.
+================================================
+
+CURRENT STATE
+
+The application already has:
+
+- Express server
+- MySQL database
+- MVC structure
+- Quiz table
+- Questions table
+- Options table
+- Quiz CRUD API
+- Seed data
+
+The homepage currently displays available quizzes.
+
+Now we need to allow users to open and view a complete quiz.
 
 ================================================
 
 OBJECTIVE
 
-Create the complete MySQL database design and connect it to the backend.
+Create the quiz viewing flow.
 
-Use proper relational database normalization (3NF).
+User journey:
 
-================================================
-
-Create the following database tables.
-
-1. users
-
-- id
-- full_name
-- email
-- password
-- role (admin/student)
-- created_at
-
-2. quizzes
-
-- id
-- title
-- description
-- duration_minutes
-- is_active
-- created_at
-
-3. questions
-
-- id
-- quiz_id
-- question_text
-- marks
-- created_at
-
-4. options
-
-- id
-- question_id
-- option_text
-- is_correct
-
-5. quiz_attempts
-
-- id
-- user_id
-- quiz_id
-- score
-- started_at
-- submitted_at
+Homepage
+    ↓
+View Available Quizzes
+    ↓
+Click Quiz
+    ↓
+Quiz Page Opens
+    ↓
+Questions and options are displayed
 
 ================================================
 
-Database Requirements
+BACKEND
 
-- Use AUTO_INCREMENT primary keys
-- Use foreign keys
-- Use ON DELETE CASCADE where appropriate
-- Use NOT NULL constraints
-- Use UNIQUE constraint on email
-- Use proper indexing
-- Follow Third Normal Form (3NF)
+Create API endpoints:
 
-================================================
-
-Create
-
-database/
-
-schema.sql
-
-This file should completely create the database.
-
-================================================
-
-Backend
-
-Create models folder.
-
-models/
-
-User.js
-
-Quiz.js
-
-Question.js
-
-Option.js
-
-QuizAttempt.js
-
-Each model should contain reusable database functions.
-
-Example:
-
-create()
-
-findById()
-
-findAll()
-
-update()
-
-delete()
-
-Use mysql2 promise API.
-
-================================================
-
-Routes
-
-Create empty REST API endpoints.
-
-GET /api/quizzes
+1.
 
 GET /api/quizzes/:id
 
-POST /api/quizzes
+Return:
 
-PUT /api/quizzes/:id
+- quiz information
+- all questions
+- all options
 
-DELETE /api/quizzes/:id
+Example response:
 
-These endpoints should work with the database.
+{
+  "id":1,
+  "title":"JavaScript Basics",
+  "description":"...",
+  "duration_minutes":10,
+  "questions":[
+    {
+      "id":1,
+      "question_text":"What is JavaScript?",
+      "marks":1,
+      "options":[
+        {
+          "id":1,
+          "option_text":"Programming language"
+        },
+        {
+          "id":2,
+          "option_text":"Database"
+        }
+      ]
+    }
+  ]
+}
 
-Return JSON only.
+IMPORTANT:
 
-No HTML.
+Do NOT return the correct answer.
+
+The field:
+
+is_correct
+
+must never be sent to the frontend.
 
 ================================================
 
-Validation
+DATABASE
 
-Validate
+Use SQL JOIN queries.
 
-title
+Example:
 
-description
+quizzes
+JOIN questions
+JOIN options
 
-duration
+Create reusable model functions.
 
-Return proper HTTP status codes.
+Add:
 
+Quiz.findByIdWithQuestions()
+
+or equivalent.
+
+================================================
+
+VALIDATION
+
+Handle:
+
+- quiz does not exist
+- invalid quiz ID
+- database errors
+
+Return proper status codes:
+
+200
 400
-
 404
-
 500
 
 ================================================
 
-Seed Data
+FRONTEND
 
-Create
+Create:
 
-database/seed.sql
+views/quiz.html
 
-Insert
+This page should contain:
 
-2 quizzes
+- Quiz title
+- Description
+- Question list
+- Radio buttons for options
 
-Each quiz
 
-5 questions
+Example:
 
-Each question
+Question 1:
 
-4 options
+What is HTML?
 
-Exactly one correct answer.
+○ Programming language
 
-================================================
+○ Markup language
 
-Frontend
-
-Keep the existing homepage.
-
-Only add a new button
-
-"View Available Quizzes"
-
-When clicked
-
-Fetch
-
-GET /api/quizzes
-
-Display quiz titles inside a simple table.
-
-No styling improvements.
+○ Database
 
 ================================================
 
-Error Handling
+JavaScript
 
-Maintain the existing global error handler.
+Create:
 
-Return meaningful JSON errors.
+public/js/quiz.js
+
+
+Functionality:
+
+1.
+
+Read quiz id from URL.
+
+Example:
+
+quiz.html?id=1
+
+
+2.
+
+Call:
+
+GET /api/quizzes/:id
+
+
+3.
+
+Render:
+
+- title
+- description
+- questions
+- options
+
+
+4.
+
+Show loading state.
+
+5.
+
+Show error message if quiz does not exist.
 
 ================================================
 
-At the end provide
+Homepage Changes
 
-Updated project tree
+Modify the quiz list.
 
-New folders
+Each quiz should have:
 
-All SQL files
+"Start Quiz"
 
-All new source code
+button.
 
-Commands to import schema.sql
+Example:
 
-Commands to import seed.sql
+JavaScript Basics
 
-No authentication.
+[Start Quiz]
 
-No timer.
 
-No quiz attempt UI.
+Clicking should open:
 
-No scoring.
+quiz.html?id=QUIZ_ID
 
-No admin dashboard.
+================================================
 
-Only database design and Quiz CRUD API.
+Styling
+
+Keep styling simple.
+
+Do not redesign the entire website.
+
+Only add basic styles needed for:
+
+- quiz card
+- questions
+- options
+- buttons
+
+================================================
+
+Testing
+
+Verify:
+
+1.
+
+Homepage loads quizzes.
+
+2.
+
+Clicking a quiz opens quiz page.
+
+3.
+
+Questions appear.
+
+4.
+
+Options appear.
+
+5.
+
+Correct answers are NOT visible in browser network response.
+
+================================================
+
+At the end provide:
+
+- Updated project tree
+- New files created
+- Modified files
+- API examples
+- How to test the quiz page
+
+Do not implement:
+
+- authentication
+- timer
+- submission
+- scoring
+- results
+- admin panel
+
+Only implement quiz viewing.

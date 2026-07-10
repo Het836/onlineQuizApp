@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/quizzes/:id - Get a specific quiz
+// GET /api/quizzes/:id - Get a specific quiz with questions and options
 router.get('/:id', async (req, res) => {
   try {
     const quizId = parseInt(req.params.id);
@@ -50,7 +50,7 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    const quiz = await Quiz.findById(quizId);
+    const quiz = await Quiz.findByIdWithQuestions(quizId);
     if (!quiz) {
       return res.status(404).json({
         status: 'error',

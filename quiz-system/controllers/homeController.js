@@ -28,3 +28,11 @@ exports.about = (req, res) => {
 exports.contact = (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'contact.html'));
 };
+
+/**
+ * GET /quiz.html
+ * Render the quiz page
+ */
+exports.quiz = (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'quiz.html'));
+};

@@ -1,5 +1,7 @@
 // Quiz Model
 const db = require('../config/db');
+const Question = require('./Question.js');
+const Option = require('./Option.js');
 
 class Quiz {
   // Create a new quiz
@@ -19,6 +21,37 @@ class Quiz {
       [id]
     );
     return rows[0];
+  }
+
+  // Find quiz by ID with questions and options (without correct answers)
+  static async findByIdWithQuestions(id) {
+    try {
+      // Get the quiz
+      const quiz = await this.findById(id);
+      if (!quiz) {
+        return null;
+      }
+
+      // Get all questions for this quiz
+      const questions = await Question.findByQuizId(id);
+
+      // For each question, get its options (without is_correct)
+      for (let i = 0; i < questions.length; i++) {
+        const options = await Option.findByQuestionId(questions[i].id);
+        // Remove the is_correct field before sending to frontend
+        questions[i].options = options.map(option => {
+          const { is_correct, ...optionWithoutCorrect } = option;
+          return optionWithoutCorrect;
+        });
+      }
+
+      // Attach questions to quiz
+      quiz.questions = questions;
+
+      return quiz;
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Get all quizzes

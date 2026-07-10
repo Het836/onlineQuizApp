@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (quizSection && quizTableBody) {
                 try {
                     // Show loading state
-                    quizTableBody.innerHTML = '<tr><td colspan="4">Loading quizzes...</td></tr>';
+                    quizTableBody.innerHTML = '<tr><td colspan="5">Loading quizzes...</td></tr>';
                     quizSection.style.display = 'block';
 
                     // Fetch quizzes from API
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const quizzes = data.data;
 
                         if (quizzes.length === 0) {
-                            quizTableBody.innerHTML = '<tr><td colspan="4">No quizzes found</td></tr>';
+                            quizTableBody.innerHTML = '<tr><td colspan="5">No quizzes found</td></tr>';
                         } else {
                             // Clear and populate table
                             quizTableBody.innerHTML = '';
@@ -155,17 +155,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <td>${quiz.description || 'No description'}</td>
                                     <td>${quiz.duration_minutes}</td>
                                     <td>${statusBadge}</td>
+                                    <td><button class="start-quiz-btn" data-quiz-id="${quiz.id}">Start Quiz</button></td>
                                 `;
 
                                 quizTableBody.appendChild(row);
                             });
+
+                            // Add event listeners to start quiz buttons
+                            const startQuizButtons = quizTableBody.querySelectorAll('.start-quiz-btn');
+                            startQuizButtons.forEach(button => {
+                                button.addEventListener('click', (e) => {
+                                    const quizId = e.target.getAttribute('data-quiz-id');
+                                    window.location.href = `quiz.html?id=${quizId}`;
+                                });
+                            });
                         }
                     } else {
-                        quizTableBody.innerHTML = '<tr><td colspan="4">Error loading quiz data</td></tr>';
+                        quizTableBody.innerHTML = '<tr><td colspan="5">Error loading quiz data</td></tr>';
                     }
                 } catch (error) {
                     console.error('Error fetching quizzes:', error);
-                    quizTableBody.innerHTML = `<tr><td colspan="4">Error: ${error.message}</td></tr>`;
+                    quizTableBody.innerHTML = `<tr><td colspan="5">Error: ${error.message}</td></tr>`;
                 }
             }
         });

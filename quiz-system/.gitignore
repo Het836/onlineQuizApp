@@ -34,3 +34,7 @@ Thumbs.db
 dist/
 build/
 coverage/
+
+
+errorLog.txt
+prompt.txt
