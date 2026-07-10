@@ -7,45 +7,33 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="container">
         <header>
             <h1>Online Quiz System</h1>
         </header>
-        
-        <main>
+
+        <main id="main-content">
             <section class="hero">
                 <h2>Welcome to Our Quiz Platform</h2>
                 <p>Test your knowledge, challenge yourself, and learn new concepts every day.</p>
                 <div class="cta-buttons">
-                    <a href="/api/health" class="btn btn-secondary" id="health-check-btn">Check API</a>
-                    <button class="btn btn-secondary" id="view-quizzes-btn">View Available Quizzes</button>
+                    <a href="/api/health" class="btn btn-secondary" id="health-check-btn">Check API Health</a>
+                    <button class="btn btn-primary" id="view-quizzes-btn">View Available Quizzes</button>
                 </div>
-                <div id="health-check-result" class="mt-3"></div>
-
-                <!-- Quiz Table Section -->
-                <section id="quiz-section" class="mt-5" style="display: none;">
-                    <h2>Available Quizzes</h2>
-                    <div id="quiz-table-container">
-                        <table id="quiz-table" class="quiz-table">
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Description</th>
-                                    <th>Duration (mins)</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="quiz-table-body">
-                                <!-- Quiz data will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                <div id="health-check-result"></div>
             </section>
-            
+
+            <!-- Quiz Cards Section -->
+            <section id="quiz-section" class="mt-5">
+                <h2>Available Quizzes</h2>
+                <div id="quiz-cards-container">
+                    <!-- Quiz cards will be populated here -->
+                </div>
+            </section>
+
             <section class="features">
-                <h2>Features</h2>
+                <h2>Our Features</h2>
                 <div class="feature-cards">
                     <div class="card">
                         <h3>Multiple Choice Questions</h3>
@@ -61,14 +49,14 @@
                     </div>
                 </div>
             </section>
-            
+
             <section class="about">
                 <h2>About This System</h2>
                 <p>This is Phase 1 of the Online Quiz System, focusing on setting up the foundation with a working Express server, database connection, and basic API endpoints.</p>
                 <p>Future phases will include user authentication, quiz creation, question management, and scoring systems.</p>
             </section>
         </main>
-        
+
         <footer>
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
         </footer>

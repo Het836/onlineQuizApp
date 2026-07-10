@@ -67,7 +67,7 @@ function showError(message) {
         <div class="error">
             <h3>Error</h3>
             <p>${message}</p>
-            <a href="/" class="btn-back">Back to Home</a>
+            <a href="/" class="btn btn-secondary">Back to Home</a>
         </div>
     `;
 }
@@ -85,6 +85,14 @@ function showQuiz(quizData) {
         <h1 class="quiz-title">${quizData.title}</h1>
         <p class="quiz-description">${quizData.description || 'No description available'}</p>
     `;
+
+    // Create progress indicator
+    const progressContainer = document.createElement('div');
+    progressContainer.className = 'progress-container';
+    progressContainer.innerHTML = `
+        <div class="progress-bar" id="progress-bar"></div>
+    `;
+    quizContainer.appendChild(progressContainer);
 
     // Create quiz body
     const quizBody = document.createElement('div');
@@ -115,22 +123,60 @@ function showQuiz(quizData) {
         quizBody.innerHTML = '<p>No questions available for this quiz.</p>';
     }
 
-    // Create submit button container
-    const submitContainer = document.createElement('div');
-    submitContainer.className = 'submit-container';
-    submitContainer.innerHTML = `
-        <button id="submit-quiz" class="btn-submit">Submit Quiz</button>
+    // Create submit button container (sticky)
+    const stickyContainer = document.createElement('div');
+    stickyContainer.className = 'sticky-container';
+    stickyContainer.innerHTML = `
+        <button id="submit-quiz" class="btn btn-primary">Submit Quiz</button>
     `;
 
     // Append to container
     quizContainer.innerHTML = '';
     quizContainer.appendChild(quizHeader);
     quizContainer.appendChild(quizBody);
-    quizContainer.appendChild(submitContainer);
+    quizContainer.appendChild(stickyContainer);
 
     // Add event listener to submit button
     const submitButton = document.getElementById('submit-quiz');
     submitButton.addEventListener('click', handleSubmitQuiz);
+
+    // Add event listeners to radio buttons to update progress
+    const radios = quizBody.querySelectorAll('input[type="radio"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', updateAnswerCount);
+    });
+
+    // Update progress bar initially
+    updateProgressBar(0);
+}
+
+function updateAnswerCount() {
+    if (!currentQuizData || !currentQuizData.questions) return;
+
+    const answeredQuestions = [];
+    currentQuizData.questions.forEach((question, index) => {
+        const selectedOption = document.querySelector(`input[name="question_${index}"]:checked`);
+        if (selectedOption) {
+            answeredQuestions.push(index);
+        }
+    });
+
+    // Find the highest answered question index
+    const highestAnswered = answeredQuestions.length > 0 ? Math.max(...answeredQuestions) : -1;
+    updateProgressBar(highestAnswered);
+}
+
+function updateProgressBar(currentQuestionIndex) {
+    if (!currentQuizData || !currentQuizData.questions) return;
+
+    const progressBar = document.getElementById('progress-bar');
+    if (!progressBar) return;
+
+    const totalQuestions = currentQuizData.questions.length;
+    // If no questions answered, show 0%
+    // If at least one question answered, show progress based on highest answered
+    const progressPercent = currentQuestionIndex === -1 ? 0 : ((currentQuestionIndex + 1) / totalQuestions) * 100;
+    progressBar.style.width = `${progressPercent}%`;
 }
 
 async function handleSubmitQuiz() {
@@ -197,18 +243,41 @@ function showResult(result) {
         radio.disabled = true;
     });
 
+    // Determine if passed (assuming 60% is passing)
+    const passed = result.percentage >= 60;
+
     // Build the result display
     let resultHTML = `
         <div class="result-container">
-            <h2>Quiz Completed</h2>
-            <div class="score-summary">
-                <p><strong>Score:</strong> <span class="score-value">${result.score}</span> out of <span class="total-questions">${result.total_questions}</span></p>
-                <p><strong>Percentage:</strong> <span class="percentage-value">${result.percentage}%</span></p>
-                <p><strong>Correct Answers:</strong> <span class="correct-count">${result.correct_answers}</span></p>
-                <p><strong>Wrong Answers:</strong> <span class="wrong-count">${result.wrong_answers}</span></p>
+            <div class="result-header">
+                <h2>Quiz Completed</h2>
+                <div class="score-badge ${passed ? 'passed' : 'failed'}">
+                    <span class="badge-score">${result.score}</span>
+                    <span class="badge-label">/${result.total_questions}</span>
+                </div>
             </div>
-            <hr>
-            <h3>Question Details:</h3>
+
+            <div class="score-summary">
+                <div class="percentage-container">
+                    <span class="percentage-value">${result.percentage}%</span>
+                    <span class="percentage-label">${passed ? 'Passed' : 'Failed'}</span>
+                </div>
+                <div class="score-details">
+                    <div class="score-item">
+                        <span class="label">Correct Answers:</span>
+                        <span class="value correct-count">${result.correct_answers}</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="label">Wrong Answers:</span>
+                        <span class="value wrong-count">${result.wrong_answers}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question-results-title">
+                <h3>Question Review</h3>
+                <p>Review your answers below. Correct answers are marked in green, incorrect in red.</p>
+            </div>
             <ol class="question-results">
     `;
 
@@ -223,9 +292,15 @@ function showResult(result) {
         const correctOption = question.options.find(opt => opt.id === correctOptionId);
 
         resultHTML += `
-            <li class="question-result">
-                <div class="question-text">Question ${index + 1}: ${question.question_text}</div>
-                <div class="result-icon">${isCorrect ? '✓' : '✗'}</div>
+            <li class="question-result ${isCorrect ? 'correct' : 'incorrect'}">
+                <div class="question-header">
+                    <span class="question-number">Question ${index + 1}:</span>
+                    <span class="question-text">${question.question_text}</span>
+                </div>
+                <div class="question-meta">
+                    <span class="result-icon">${isCorrect ? '✓' : '✗'}</span>
+                    <span class="result-text">${isCorrect ? 'Correct!' : 'Incorrect'}</span>
+                </div>
                 <div class="options-list">
                     ${question.options.map(option => {
                         let className = '';
@@ -258,125 +333,14 @@ function showResult(result) {
 
     resultHTML += `
             </ol>
-            <div class="button-group">
-                <button id="retake-quiz" class="btn btn-retake">Retake Quiz</button>
-                <button id="back-to-quizzes" class="btn btn-back">Back to Quizzes</button>
+            <div class="result-actions">
+                <button id="retake-quiz" class="btn btn-warning">Retake Quiz</button>
+                <button id="back-to-home" class="btn btn-secondary">Back to Home</button>
             </div>
         </div>
     `;
 
     quizContainer.innerHTML = resultHTML;
-
-    // Add some styles for the result display
-    const style = document.createElement('style');
-    style.textContent = `
-        .result-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .score-summary {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .score-summary p {
-            margin: 5px 0;
-            font-size: 1.1rem;
-        }
-        .score-value, .total-questions, .correct-count, .percentage-value {
-            font-weight: bold;
-            color: #28a745; /* Green */
-        }
-        .wrong-count {
-            font-weight: bold;
-            color: #dc3545; /* Red */
-        }
-        .question-result {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #fff;
-        }
-        .question-text {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .result-icon {
-            font-size: 1.5rem;
-            margin-right: 10px;
-            display: inline-block;
-            width: 30px;
-            text-align: center;
-        }
-        .options-list {
-            margin: 10px 0;
-        }
-        .option-label {
-            display: block;
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 4px;
-            cursor: default;
-        }
-        .option-label.correct-answer {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        .option-label.incorrect-selected {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-        .option-label.correct-selected {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        .correct-answer-text {
-            color: #28a745;
-            font-weight: bold;
-            margin-top: 10px;
-            font-size: 1rem;
-        }
-        .button-group {
-            margin-top: 25px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        .btn-retake {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-retake:hover {
-            background-color: #e0a800;
-        }
-        . btn-back {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-back:hover {
-            background-color: #5a6268;
-        }
-    `;
-    document.head.appendChild(style);
 
     // Add event listeners for the new buttons
     document.getElementById('retake-quiz').addEventListener('click', () => {
@@ -384,7 +348,7 @@ function showResult(result) {
         showQuiz(currentQuizData);
     });
 
-    document.getElementById('back-to-quizzes').addEventListener('click', () => {
+    document.getElementById('back-to-home').addEventListener('click', () => {
         // Go back to the home page (quiz list)
         window.location.href = '/';
     });

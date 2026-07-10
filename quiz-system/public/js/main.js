@@ -1,7 +1,7 @@
 // Main JavaScript for Online Quiz System
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded');
-    
+
     // Add active class to current nav link
     const currentLocation = location.href;
     const menuItems = document.querySelectorAll('nav a');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
             item.classList.add('active');
         }
     });
-    
+
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     // Form validation
     const forms = document.querySelectorAll('form.validate');
     forms.forEach(form => {
@@ -34,23 +34,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     // Simple form validation
     function validateForm(form) {
         let isValid = true;
         const inputs = form.querySelectorAll('input[required], textarea[required], select[required]');
-        
+
         inputs.forEach(input => {
             // Remove previous error styles
             input.classList.remove('is-invalid');
             const errorDiv = input.parentElement.querySelector('.invalid-feedback');
             if (errorDiv) errorDiv.remove();
-            
+
             // Check if empty
             if (!input.value.trim()) {
                 isValid = false;
                 input.classList.add('is-invalid');
-                
+
                 // Add error message
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'invalid-feedback';
@@ -58,10 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.parentElement.appendChild(errorDiv);
             }
         });
-        
+
         return isValid;
     }
-    
+
     // API helper functions
     window.api = {
         get: async (url) => {
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 });
@@ -91,14 +91,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
-    
+
     // Handle health check button if exists
     const healthCheckBtn = document.getElementById('health-check-btn');
     if (healthCheckBtn) {
         healthCheckBtn.addEventListener('click', async () => {
             const resultDiv = document.getElementById('health-check-result');
             if (resultDiv) {
-                resultDiv.innerHTML = 'element' // Placeholder to prevent unused variable warning
                 resultDiv.innerHTML = '<p>Checking API...</p>';
                 try {
                     const data = await api.get('/api/health');
@@ -124,12 +123,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (viewQuizzesBtn) {
         viewQuizzesBtn.addEventListener('click', async () => {
             const quizSection = document.getElementById('quiz-section');
-            const quizTableBody = document.getElementById('quiz-table-body');
+            const quizCardsContainer = document.getElementById('quiz-cards-container');
 
-            if (quizSection && quizTableBody) {
+            if (quizSection && quizCardsContainer) {
                 try {
                     // Show loading state
-                    quizTableBody.innerHTML = '<tr><td colspan="5">Loading quizzes...</td></tr>';
+                    quizCardsContainer.innerHTML = '<p class="loading-message">Loading quizzes...</p>';
                     quizSection.style.display = 'block';
 
                     // Fetch quizzes from API
@@ -139,30 +138,31 @@ document.addEventListener('DOMContentLoaded', function() {
                         const quizzes = data.data;
 
                         if (quizzes.length === 0) {
-                            quizTableBody.innerHTML = '<tr><td colspan="5">No quizzes found</td></tr>';
+                            quizCardsContainer.innerHTML = '<p class="no-quizzes-message">No quizzes available at the moment.</p>';
                         } else {
-                            // Clear and populate table
-                            quizTableBody.innerHTML = '';
+                            // Clear and populate cards
+                            quizCardsContainer.innerHTML = '';
                             quizzes.forEach(quiz => {
-                                const row = document.createElement('tr');
-
-                                const statusBadge = quiz.is_active
-                                    ? '<span class="status-badge status-active">Active</span>'
-                                    : '<span class="status-badge status-inactive">Inactive</span>';
-
-                                row.innerHTML = `
-                                    <td>${quiz.title}</td>
-                                    <td>${quiz.description || 'No description'}</td>
-                                    <td>${quiz.duration_minutes}</td>
-                                    <td>${statusBadge}</td>
-                                    <td><button class="start-quiz-btn" data-quiz-id="${quiz.id}">Start Quiz</button></td>
+                                const card = document.createElement('div');
+                                card.className = 'quiz-card card';
+                                card.innerHTML = `
+                                    <div class="card-content">
+                                        <h3>${quiz.title}</h3>
+                                        <p class="quiz-description">${quiz.description || 'No description available'}</p>
+                                        <div class="quiz-meta">
+                                            <span class="meta-item"><strong>Duration:</strong> ${quiz.duration_minutes} minutes</span>
+                                            <span class="meta-item status-badge ${quiz.is_active ? 'status-active' : 'status-inactive'}">
+                                                ${quiz.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
+                                        <button class="start-quiz-btn btn btn-primary" data-quiz-id="${quiz.id}">Start Quiz</button>
+                                    </div>
                                 `;
-
-                                quizTableBody.appendChild(row);
+                                quizCardsContainer.appendChild(card);
                             });
 
                             // Add event listeners to start quiz buttons
-                            const startQuizButtons = quizTableBody.querySelectorAll('.start-quiz-btn');
+                            const startQuizButtons = quizCardsContainer.querySelectorAll('.start-quiz-btn');
                             startQuizButtons.forEach(button => {
                                 button.addEventListener('click', (e) => {
                                     const quizId = e.target.getAttribute('data-quiz-id');
@@ -171,16 +171,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                         }
                     } else {
-                        quizTableBody.innerHTML = '<tr><td colspan="5">Error loading quiz data</td></tr>';
+                        quizCardsContainer.innerHTML = '<p class="error-message">Error loading quiz data</p>';
                     }
                 } catch (error) {
                     console.error('Error fetching quizzes:', error);
-                    quizTableBody.innerHTML = `<tr><td colspan="5">Error: ${error.message}</td></tr>`;
+                    quizCardsContainer.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
                 }
             }
         });
     }
-    
+
     // Initialize any tooltips or interactive elements
     console.log('Application initialized');
 });
