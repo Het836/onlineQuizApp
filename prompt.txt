@@ -1,0 +1,247 @@
+You are continuing the Online Quiz System project.
+
+IMPORTANT
+
+Do NOT redesign the website.
+
+Do NOT implement login.
+
+Do NOT implement quiz taking.
+
+Do NOT implement timers.
+
+Do NOT implement scoring.
+
+Only complete Phase 2.
+
+The existing Phase 1 project must remain working.
+
+================================================
+
+OBJECTIVE
+
+Create the complete MySQL database design and connect it to the backend.
+
+Use proper relational database normalization (3NF).
+
+================================================
+
+Create the following database tables.
+
+1. users
+
+- id
+- full_name
+- email
+- password
+- role (admin/student)
+- created_at
+
+2. quizzes
+
+- id
+- title
+- description
+- duration_minutes
+- is_active
+- created_at
+
+3. questions
+
+- id
+- quiz_id
+- question_text
+- marks
+- created_at
+
+4. options
+
+- id
+- question_id
+- option_text
+- is_correct
+
+5. quiz_attempts
+
+- id
+- user_id
+- quiz_id
+- score
+- started_at
+- submitted_at
+
+================================================
+
+Database Requirements
+
+- Use AUTO_INCREMENT primary keys
+- Use foreign keys
+- Use ON DELETE CASCADE where appropriate
+- Use NOT NULL constraints
+- Use UNIQUE constraint on email
+- Use proper indexing
+- Follow Third Normal Form (3NF)
+
+================================================
+
+Create
+
+database/
+
+schema.sql
+
+This file should completely create the database.
+
+================================================
+
+Backend
+
+Create models folder.
+
+models/
+
+User.js
+
+Quiz.js
+
+Question.js
+
+Option.js
+
+QuizAttempt.js
+
+Each model should contain reusable database functions.
+
+Example:
+
+create()
+
+findById()
+
+findAll()
+
+update()
+
+delete()
+
+Use mysql2 promise API.
+
+================================================
+
+Routes
+
+Create empty REST API endpoints.
+
+GET /api/quizzes
+
+GET /api/quizzes/:id
+
+POST /api/quizzes
+
+PUT /api/quizzes/:id
+
+DELETE /api/quizzes/:id
+
+These endpoints should work with the database.
+
+Return JSON only.
+
+No HTML.
+
+================================================
+
+Validation
+
+Validate
+
+title
+
+description
+
+duration
+
+Return proper HTTP status codes.
+
+400
+
+404
+
+500
+
+================================================
+
+Seed Data
+
+Create
+
+database/seed.sql
+
+Insert
+
+2 quizzes
+
+Each quiz
+
+5 questions
+
+Each question
+
+4 options
+
+Exactly one correct answer.
+
+================================================
+
+Frontend
+
+Keep the existing homepage.
+
+Only add a new button
+
+"View Available Quizzes"
+
+When clicked
+
+Fetch
+
+GET /api/quizzes
+
+Display quiz titles inside a simple table.
+
+No styling improvements.
+
+================================================
+
+Error Handling
+
+Maintain the existing global error handler.
+
+Return meaningful JSON errors.
+
+================================================
+
+At the end provide
+
+Updated project tree
+
+New folders
+
+All SQL files
+
+All new source code
+
+Commands to import schema.sql
+
+Commands to import seed.sql
+
+No authentication.
+
+No timer.
+
+No quiz attempt UI.
+
+No scoring.
+
+No admin dashboard.
+
+Only database design and Quiz CRUD API.
