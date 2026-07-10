@@ -201,12 +201,10 @@ function showResult(result) {
     let resultHTML = `
         <div class="result-container">
             <h2>Quiz Completed</h2>
-            <div class="score-summary">
-                <p><strong>Score:</strong> <span class="score-value">${result.score}</span> out of <span class="total-questions">${result.total_questions}</span></p>
-                <p><strong>Percentage:</strong> <span class="percentage-value">${result.percentage}%</span></p>
-                <p><strong>Correct Answers:</strong> <span class="correct-count">${result.correct_answers}</span></p>
-                <p><strong>Wrong Answers:</strong> <span class="wrong-count">${result.wrong_answers}</span></p>
-            </div>
+            <p>Score: ${result.score} out of ${result.total_questions}</p>
+            <p>Percentage: ${result.percentage}%</p>
+            <p>Correct answers: ${result.correct_answers}</p>
+            <p>Wrong answers: ${result.wrong_answers}</p>
             <hr>
             <h3>Question Details:</h3>
             <ol class="question-results">
@@ -229,39 +227,30 @@ function showResult(result) {
                 <div class="options-list">
                     ${question.options.map(option => {
                         let className = '';
-                        let title = '';
-
                         if (option.id === correctOptionId && option.id === selectedOptionId) {
                             // Correctly selected
                             className = 'correct-selected';
-                            title = 'Correct answer (your selection)';
                         } else if (option.id === correctOptionId) {
-                            // Correct answer (not selected or selected but wrong)
+                            // Correct answer
                             className = 'correct-answer';
-                            title = 'Correct answer';
                         } else if (option.id === selectedOptionId) {
                             // Incorrectly selected
                             className = 'incorrect-selected';
-                            title = 'Your selection (incorrect)';
                         }
-
-                        return `<label class="option-label ${className}" title="${title}">
+                        return `<label class="option-label ${className}">
                                     <input type="radio" name="question_result_${index}" value="${option.id}" disabled>
                                     <span class="option-text">${option.option_text}</span>
                                 </label>`;
                     }).join('')}
                 </div>
-                ${!selectedOptionId ? `<p class="correct-answer-text">Correct answer: ${correctOption.option_text}</p>` : ''}
+                ${!selectedOptionId ? '<p class="no-answer">Not Answered</p>' : ''}
             </li>
         `;
     });
 
     resultHTML += `
             </ol>
-            <div class="button-group">
-                <button id="retake-quiz" class="btn btn-retake">Retake Quiz</button>
-                <button id="back-to-quizzes" class="btn btn-back">Back to Quizzes</button>
-            </div>
+            <a href="/" class="btn-back">Back to Home</a>
         </div>
     `;
 
@@ -275,42 +264,25 @@ function showResult(result) {
             margin: 0 auto;
             padding: 20px;
         }
-        .score-summary {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .score-summary p {
-            margin: 5px 0;
-            font-size: 1.1rem;
-        }
-        .score-value, .total-questions, .correct-count, .percentage-value {
-            font-weight: bold;
-            color: #28a745; /* Green */
-        }
-        .wrong-count {
-            font-weight: bold;
-            color: #dc3545; /* Red */
+        .question-results {
+            list-style: none;
+            padding: 0;
         }
         .question-result {
             margin-bottom: 20px;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            background-color: #fff;
         }
         .question-text {
             font-weight: bold;
             margin-bottom: 10px;
-            color: #333;
         }
         .result-icon {
             font-size: 1.5rem;
             margin-right: 10px;
             display: inline-block;
             width: 30px;
-            text-align: center;
         }
         .options-list {
             margin: 10px 0;
@@ -320,87 +292,7 @@ function showResult(result) {
             margin: 5px 0;
             padding: 10px;
             border-radius: 4px;
-            cursor: default;
-        }
-        .option-label.correct-answer {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        .option-label.incorrect-selected {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-        .option-label.correct-selected {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        .correct-answer-text {
-            color: #28a745;
-            font-weight: bold;
-            margin-top: 10px;
-            font-size: 1rem;
-        }
-        .button-group {
-            margin-top: 25px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        .btn-retake {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-retake:hover {
-            background-color: #e0a800;
-        }
-        . btn-back {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-back:hover {
-            background-color: #5a6268;
         }
     `;
     document.head.appendChild(style);
-
-    // Add event listeners for the new buttons
-    document.getElementById('retake-quiz').addEventListener('click', () => {
-        // Reset the quiz to initial state
-        showQuiz(currentQuizData);
-    });
-
-    document.getElementById('back-to-quizzes').addEventListener('click', () => {
-        // Go back to the home page (quiz list)
-        window.location.href = '/';
-    });
-}
-
-async function fetchQuizData(quizId) {
-    try {
-        const data = await api.get(`/api/quizzes/${quizId}`);
-
-        if (data.status === 'success') {
-            showQuiz(data.data);
-        } else {
-            showError('Failed to load quiz data');
-        }
-    } catch (error) {
-        console.error('Error fetching quiz:', error);
-        showError('An error occurred while loading the quiz. Please try again.');
-    }
 }

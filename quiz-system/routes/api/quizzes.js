@@ -2,6 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const Quiz = require('../../Models/Quiz.js');
+const Question = require('../../Models/Question.js');
+const Option = require('../../Models/Option.js');
+const QuizAttempt = require('../../Models/QuizAttempt.js');
 
 // Validation functions
 const validateQuiz = (quiz) => {
@@ -192,6 +195,169 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to delete quiz'
+    });
+  }
+});
+
+// POST /api/quizzes/:id/submit - Submit a quiz attempt
+router.post('/:id/submit', async (req, res) => {
+  try {
+    const quizId = parseInt(req.params.id);
+    if (isNaN(quizId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid quiz ID'
+      });
+    }
+
+    const { answers } = req.body;
+
+    // Validate request
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid request format. Expected answers array.'
+      });
+    }
+
+    // Check if quiz exists
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Quiz not found'
+      });
+    }
+
+    // Get all questions for this quiz with correct answers
+    const questions = await Question.findByQuizId(quizId);
+
+    // Validation tracking
+    const questionIdsInQuiz = new Set(questions.map(q => q.id));
+    const answeredQuestionIds = new Set();
+    let hasDuplicateAnswers = false;
+
+    // Validate each answer
+    for (const answer of answers) {
+      const { question_id, selected_option_id } = answer;
+
+      // Check for duplicate answers
+      if (answeredQuestionIds.has(question_id)) {
+        hasDuplicateAnswers = true;
+        break;
+      }
+      answeredQuestionIds.add(question_id);
+
+      // Validate question belongs to this quiz
+      if (!questionIdsInQuiz.has(question_id)) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Question ID ${question_id} does not belong to this quiz`
+        });
+      }
+
+      // Validate option exists for this question
+      const question = questions.find(q => q.id === question_id);
+      if (!question) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Question ID ${question_id} not found`
+        });
+      }
+
+      // Get options for this question to validate the option ID
+      const options = await Option.findByQuestionId(question_id);
+      const validOptionIds = options.map(opt => opt.id);
+
+      if (!validOptionIds.includes(selected_option_id)) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Option ID ${selected_option_id} is not valid for question ${question_id}`
+        });
+      }
+    }
+
+    // Check for duplicate answers
+    if (hasDuplicateAnswers) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Duplicate answers detected for the same question'
+      });
+    }
+
+    // Calculate score
+    let correctAnswers = 0;
+    let wrongAnswers = 0;
+    const results = [];
+
+    for (const answer of answers) {
+      const { question_id, selected_option_id } = answer;
+
+      // Find the question
+      const question = questions.find(q => q.id === question_id);
+
+      // Get correct option for this question
+      const options = await Option.findByQuestionId(question_id);
+      const correctOption = options.find(opt => opt.is_correct === 1);
+
+      const isCorrect = correctOption && correctOption.id === selected_option_id;
+
+      if (isCorrect) {
+        correctAnswers++;
+      } else {
+        wrongAnswers++;
+      }
+
+      results.push({
+        question_id: question_id,
+        correct: isCorrect,
+        selected_option: selected_option_id,
+        correct_option: correctOption ? correctOption.id : null
+      });
+    }
+
+    // Handle unanswered questions (questions that were not in the answers array)
+    const answeredQuestionIdsSet = new Set(answers.map(a => a.question_id));
+    const unansweredQuestions = questions.filter(q => !answeredQuestionIdsSet.has(q.id));
+
+    for (const question of unansweredQuestions) {
+      // Get correct option for this question
+      const options = await Option.findByQuestionId(question.id);
+      const correctOption = options.find(opt => opt.is_correct === 1);
+
+      results.push({
+        question_id: question.id,
+        correct: false,
+        selected_option: null, // Indicates not answered
+        correct_option: correctOption ? correctOption.id : null
+      });
+
+      wrongAnswers++; // Unanswered questions count as wrong
+    }
+
+    const totalQuestions = questions.length;
+    const score = correctAnswers; // Assuming each question is worth 1 point
+    const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+
+    // Return results
+    res.status(200).json({
+      status: 'success',
+      data: {
+        quiz_id: quiz.id,
+        quiz_title: quiz.title,
+        total_questions: totalQuestions,
+        correct_answers: correctAnswers,
+        wrong_answers: wrongAnswers,
+        score: score,
+        percentage: percentage,
+        results: results
+      }
+    });
+  } catch (error) {
+    console.error('Error submitting quiz:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to submit quiz'
     });
   }
 });

@@ -1,299 +1,105 @@
-Continue building the Online Quiz System.
+Continue the Online Quiz System.
 
-IMPORTANT:
+IMPORTANT
 
-Do not rebuild existing features.
+Do not change the backend logic.
 
-Do not modify the database schema unless absolutely necessary.
+Do not change the database.
 
-Do not add authentication.
+Do not modify API responses.
 
-Do not add timers.
+Do not change routing.
 
-Do not add scoring.
-
-Only implement Phase 3.
-
-================================================
-
-CURRENT STATE
-
-The application already has:
-
-- Express server
-- MySQL database
-- MVC structure
-- Quiz table
-- Questions table
-- Options table
-- Quiz CRUD API
-- Seed data
-
-The homepage currently displays available quizzes.
-
-Now we need to allow users to open and view a complete quiz.
+This phase is ONLY a UI/UX improvement.
 
 ================================================
 
 OBJECTIVE
 
-Create the quiz viewing flow.
+Redesign the application to look like a modern quiz platform.
 
-User journey:
+Keep all existing functionality working.
+
+================================================
+
+Improve:
 
 Homepage
-    ↓
-View Available Quizzes
-    ↓
-Click Quiz
-    ↓
-Quiz Page Opens
-    ↓
-Questions and options are displayed
+
+- Modern hero section
+- Attractive cards for quizzes
+- Responsive layout
+- Better typography
+- Better spacing
+- Better buttons
+- Hover effects
+
+Quiz Page
+
+- Card layout for each question
+- Progress indicator
+- Better radio button styling
+- Sticky Submit button
+- Better spacing between questions
+
+Results
+
+- Beautiful score card
+- Percentage displayed prominently
+- Green/Red indicators
+- Correct answer shown for every incorrect question
+- Icons for correct/incorrect
+- Summary cards
+- Retake Quiz button
+- Back to Home button
 
 ================================================
 
-BACKEND
+Responsive Design
 
-Create API endpoints:
+Support:
 
-1.
+Desktop
 
-GET /api/quizzes/:id
+Tablet
 
-Return:
-
-- quiz information
-- all questions
-- all options
-
-Example response:
-
-{
-  "id":1,
-  "title":"JavaScript Basics",
-  "description":"...",
-  "duration_minutes":10,
-  "questions":[
-    {
-      "id":1,
-      "question_text":"What is JavaScript?",
-      "marks":1,
-      "options":[
-        {
-          "id":1,
-          "option_text":"Programming language"
-        },
-        {
-          "id":2,
-          "option_text":"Database"
-        }
-      ]
-    }
-  ]
-}
-
-IMPORTANT:
-
-Do NOT return the correct answer.
-
-The field:
-
-is_correct
-
-must never be sent to the frontend.
+Mobile
 
 ================================================
 
-DATABASE
+Accessibility
 
-Use SQL JOIN queries.
+Improve:
 
-Example:
-
-quizzes
-JOIN questions
-JOIN options
-
-Create reusable model functions.
-
-Add:
-
-Quiz.findByIdWithQuestions()
-
-or equivalent.
+- keyboard navigation
+- focus states
+- semantic HTML
+- color contrast
 
 ================================================
 
-VALIDATION
+Animations
 
-Handle:
+Use subtle CSS transitions.
 
-- quiz does not exist
-- invalid quiz ID
-- database errors
-
-Return proper status codes:
-
-200
-400
-404
-500
+Do not use heavy animation libraries.
 
 ================================================
 
-FRONTEND
+Requirements
 
-Create:
+Keep:
 
-views/quiz.html
+HTML
 
-This page should contain:
+CSS
 
-- Quiz title
-- Description
-- Question list
-- Radio buttons for options
+Vanilla JavaScript
 
-
-Example:
-
-Question 1:
-
-What is HTML?
-
-○ Programming language
-
-○ Markup language
-
-○ Database
+Do not introduce React, Bootstrap, Tailwind, Vue, Angular or other frameworks.
 
 ================================================
 
-JavaScript
+Do not change backend functionality.
 
-Create:
-
-public/js/quiz.js
-
-
-Functionality:
-
-1.
-
-Read quiz id from URL.
-
-Example:
-
-quiz.html?id=1
-
-
-2.
-
-Call:
-
-GET /api/quizzes/:id
-
-
-3.
-
-Render:
-
-- title
-- description
-- questions
-- options
-
-
-4.
-
-Show loading state.
-
-5.
-
-Show error message if quiz does not exist.
-
-================================================
-
-Homepage Changes
-
-Modify the quiz list.
-
-Each quiz should have:
-
-"Start Quiz"
-
-button.
-
-Example:
-
-JavaScript Basics
-
-[Start Quiz]
-
-
-Clicking should open:
-
-quiz.html?id=QUIZ_ID
-
-================================================
-
-Styling
-
-Keep styling simple.
-
-Do not redesign the entire website.
-
-Only add basic styles needed for:
-
-- quiz card
-- questions
-- options
-- buttons
-
-================================================
-
-Testing
-
-Verify:
-
-1.
-
-Homepage loads quizzes.
-
-2.
-
-Clicking a quiz opens quiz page.
-
-3.
-
-Questions appear.
-
-4.
-
-Options appear.
-
-5.
-
-Correct answers are NOT visible in browser network response.
-
-================================================
-
-At the end provide:
-
-- Updated project tree
-- New files created
-- Modified files
-- API examples
-- How to test the quiz page
-
-Do not implement:
-
-- authentication
-- timer
-- submission
-- scoring
-- results
-- admin panel
-
-Only implement quiz viewing.
+Only improve appearance and user experience.
