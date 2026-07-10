@@ -357,12 +357,8 @@ router.post('/:id/submit', async (req, res) => {
       data: {
         attempt_id: attempt.id,
         quiz_title: quiz.title,
-        total_questions: totalQuestions,
-        correct_answers: correctAnswers,
-        wrong_answers: wrongAnswers,
         score: score,
-        percentage: percentage,
-        results: results
+        percentage: percentage
       }
     });
   } catch (error) {

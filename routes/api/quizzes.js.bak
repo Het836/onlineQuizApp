@@ -339,23 +339,11 @@ router.post('/:id/submit', async (req, res) => {
     const score = correctAnswers; // Assuming each question is worth 1 point
     const percentage = Math.round((correctAnswers / totalQuestions) * 100);
 
-    // Persist attempt
-    const attemptData = {
-      user_id: null,
-      quiz_id: quizId,
-      total_questions: totalQuestions,
-      correct_answers: correctAnswers,
-      wrong_answers: wrongAnswers,
-      score: score,
-      percentage: percentage,
-      started_at: new Date(),
-      submitted_at: new Date()
-    };
-    const attempt = await QuizAttempt.create(attemptData);
+    // Return results
     res.status(200).json({
-      status: "success",
+      status: 'success',
       data: {
-        attempt_id: attempt.id,
+        quiz_id: quiz.id,
         quiz_title: quiz.title,
         total_questions: totalQuestions,
         correct_answers: correctAnswers,
