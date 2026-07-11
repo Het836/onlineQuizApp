@@ -10,25 +10,22 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- <a href="#main-content" class="skip-link">Skip to main content</a> -->
-
     <!-- Navbar will be injected by JavaScript -->
-    <nav id="navbar"></nav>
+    <div id="navbar" data-nav="auth" data-active="results"></div>
 
-    <main id="main-content" class="container">
-        <section class="results-page">
-            <div class="results-header">
-                <h1>My Quiz Results</h1>
-                <div class="stats-row" id="stats-container">
-                    <!-- Stats will be injected here -->
-                </div>
-                <a href="/dashboard" class="btn btn-outline">← Back to Dashboard</a>
-            </div>
+    <main id="main-content" class="container page">
+        <!-- Move back button above the results header -->
+        <div class="results-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>My Quiz Results</h1>
+            <a href="/dashboard" class="btn btn-outline">← Back to Dashboard</a>
+        </div>
+        <div class="stats-row" id="stats-container">
+            <!-- Stats will be injected here -->
+        </div>
 
-            <div id="results-content">
-                <p class="loading-message">Loading your results...</p>
-            </div>
-        </section>
+        <div id="results-content">
+            <p class="loading-message">Loading your results...</p>
+        </div>
     </main>
 
     <footer>
@@ -69,22 +66,25 @@
         // Load navigation bar based on auth status
         function loadNavbar(isAuthenticated, userRole = 'student') {
             const navbar = document.getElementById('navbar');
+            const activePage = navbar.dataset.active || '';
 
             if (isAuthenticated) {
                 // Authenticated user navbar
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <div class="logo">Online Quiz System</div>
-                            <ul class="nav-links">
-                                <li><a href="/dashboard" class="active">Dashboard</a></li>
-                                <li><a href="/results">Results</a></li>
-                                <li><a href="/profile">Profile</a></li>
-                                <li><a href="#" id="logout-link">Logout</a></li>
-                            </ul>
-                            <button class="menu-toggle" aria-label="Toggle menu">
-                                <span></span><span></span><span></span>
-                            </button>
+                            <div class="navbar-inner">
+                                <div class="logo">Online Quiz System</div>
+                                <ul class="nav-links">
+                                    <li><a href="/dashboard" class="${activePage === 'dashboard' ? 'active' : ''}">Dashboard</a></li>
+                                    <li><a href="/results" class="${activePage === 'results' ? 'active' : ''}">Results</a></li>
+                                    <li><a href="/profile" class="${activePage === 'profile' ? 'active' : ''}">Profile</a></li>
+                                    <li><a href="#" id="logout-link">Logout</a></li>
+                                </ul>
+                                <button class="menu-toggle" aria-label="Toggle menu">
+                                    <span></span><span></span><span></span>
+                                </button>
+                            </div>
                         </div>
                     </nav>
                 `;
@@ -111,15 +111,17 @@
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <div class="logo">Online Quiz System</div>
-                            <ul class="nav-links">
-                                <li><a href="/">Home</a></li>
-                                <li><a href="/login">Login</a></li>
-                                <li><a href="/register">Register</a></li>
-                            </ul>
-                            <button class="menu-toggle" aria-label="Toggle menu">
-                                <span></span><span></span><span></span>
-                            </button>
+                            <div class="navbar-inner">
+                                <div class="logo">Online Quiz System</div>
+                                <ul class="nav-links">
+                                    <li><a href="/" class="${activePage === 'home' ? 'active' : ''}">Home</a></li>
+                                    <li><a href="/login" class="${activePage === 'login' ? 'active' : ''}">Login</a></li>
+                                    <li><a href="/register" class="${activePage === 'register' ? 'active' : ''}">Register</a></li>
+                                </ul>
+                                <button class="menu-toggle" aria-label="Toggle menu">
+                                    <span></span><span></span><span></span>
+                                </button>
+                            </div>
                         </div>
                     </nav>
                 `;
