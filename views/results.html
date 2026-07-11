@@ -4,35 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Results - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    <div class="container">
-        <header>
-            <h1>Online Quiz System</h1>
-        </header>
 
-        <main id="main-content">
-            <!-- Navbar will be inserted here by JavaScript -->
-            <nav id="navbar"></nav>
+    <!-- Navbar will be injected by JavaScript -->
+    <nav id="navbar"></nav>
 
-            <section class="results-page">
-                <div class="results-header">
-                    <h2>My Quiz Results</h2>
-                    <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+    <main id="main-content" class="container">
+        <section class="results-page">
+            <div class="results-header">
+                <h1>My Quiz Results</h1>
+                <div class="stats-row" id="stats-container">
+                    <!-- Stats will be injected here -->
                 </div>
+                <a href="/dashboard" class="btn btn-outline">← Back to Dashboard</a>
+            </div>
 
-                <div id="results-content">
-                    <p class="loading-message">Loading your results...</p>
-                </div>
-            </section>
-        </main>
+            <div id="results-content">
+                <p class="loading-message">Loading your results...</p>
+            </div>
+        </section>
+    </main>
 
-        <footer>
+    <footer>
+        <div class="container">
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
     <script src="/js/main.js"></script>
     <script>
         // Check authentication and load results
@@ -71,12 +75,16 @@
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/dashboard" class="nav-link">Dashboard</a>
-                                <a href="/results" class="nav-link active">Results</a>
-                                <a href="#" id="logout-link" class="nav-link">Logout</a>
-                            </div>
+                            <div class="logo">Online Quiz System</div>
+                            <ul class="nav-links">
+                                <li><a href="/dashboard" class="active">Dashboard</a></li>
+                                <li><a href="/results">Results</a></li>
+                                <li><a href="/profile">Profile</a></li>
+                                <li><a href="#" id="logout-link">Logout</a></li>
+                            </ul>
+                            <button class="menu-toggle" aria-label="Toggle menu">
+                                <span></span><span></span><span></span>
+                            </button>
                         </div>
                     </nav>
                 `;
@@ -89,20 +97,41 @@
                         await logout();
                     });
                 }
+
+                // Add mobile menu toggle
+                const menuToggle = navbar.querySelector('.menu-toggle');
+                const navLinks = navbar.querySelector('.nav-links');
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', () => {
+                        navLinks.classList.toggle('open');
+                    });
+                }
             } else {
                 // Guest navbar
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/" class="nav-link active">Home</a>
-                                <a href="/login" class="nav-link">Login</a>
-                                <a href="/register" class="nav-link">Register</a>
-                            </div>
+                            <div class="logo">Online Quiz System</div>
+                            <ul class="nav-links">
+                                <li><a href="/">Home</a></li>
+                                <li><a href="/login">Login</a></li>
+                                <li><a href="/register">Register</a></li>
+                            </ul>
+                            <button class="menu-toggle" aria-label="Toggle menu">
+                                <span></span><span></span><span></span>
+                            </button>
                         </div>
                     </nav>
                 `;
+
+                // Add mobile menu toggle for guest
+                const menuToggle = navbar.querySelector('.menu-toggle');
+                const navLinks = navbar.querySelector('.nav-links');
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', () => {
+                        navLinks.classList.toggle('open');
+                    });
+                }
             }
         }
 
@@ -126,7 +155,7 @@
             }
         }
 
-        // Load user's quiz results by checking each quiz
+        // Load user's quiz results and compute statistics
         async function loadUserResults(userId) {
             try {
                 // Get all quizzes first
@@ -155,9 +184,10 @@
                                     attempt => attempt.user_id === userId
                                 );
 
-                                // Add quiz title to each attempt for display
+                                // Add quiz title and other info to each attempt
                                 userAttempts.forEach(attempt => {
                                     attempt.quiz_title = quiz.title;
+                                    attempt.quiz_id = quiz.id;
                                 });
 
                                 userResults.push(...userAttempts);
@@ -172,6 +202,7 @@
 
                 // Display results
                 const container = document.getElementById('results-content');
+                const statsContainer = document.getElementById('stats-container');
 
                 if (userResults.length === 0) {
                     container.innerHTML = `
@@ -181,29 +212,57 @@
                             <a href="/dashboard" class="btn btn-primary">Start a Quiz</a>
                         </div>
                     `;
+                    statsContainer.innerHTML = ''; // No stats
                     return;
                 }
 
+                // Calculate statistics
+                const totalAttempts = userResults.length;
+                const scores = userResults.map(r => {
+                    // Use percentage if available, otherwise calculate
+                    if (r.percentage !== undefined) return r.percentage;
+                    if (r.score && r.total_questions) return (r.score / r.total_questions) * 100;
+                    return 0;
+                });
+                const averageScore = scores.reduce((sum, val) => sum + val, 0) / scores.length || 0;
+                const highestScore = Math.max(...scores);
+
+                // Format stats
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <h3>Total Attempts</h3>
+                        <div class="value">${totalAttempts}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Average Score</h3>
+                        <div class="value">${Math.round(averageScore)}%</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Highest Score</h3>
+                        <div class="value">${Math.round(highestScore)}%</div>
+                    </div>
+                `;
+
                 // Sort results by date (newest first)
                 userResults.sort((a, b) => {
-                    const dateA = new Date(a.submitted_at || a.started_at);
-                    const dateB = new Date(b.submitted_at || b.started_at);
+                    const dateA = new Date(a.submitted_at || a.started_at || 0);
+                    const dateB = new Date(b.submitted_at || b.started_at || 0);
                     return dateB - dateA;
                 });
 
                 // Build results HTML
                 let resultsHTML = `
-                    <div class="results-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Quiz</th>
-                                    <th>Score</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Quiz</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 `;
 
                 userResults.forEach(result => {
@@ -211,19 +270,17 @@
                     const date = new Date(result.submitted_at || result.started_at);
                     const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-                    // Calculate percentage if not directly available
+                    // Score display
+                    const score = result.score ?? 0;
+                    const total = result.total_questions ?? 0;
                     const percentage = result.percentage !== undefined ? result.percentage :
-                                      (result.score && result.total_questions ?
-                                       Math.round((result.score / result.total_questions) * 100) : 0);
+                                      (total > 0 ? Math.round((score / total) * 100) : 0);
 
                     resultsHTML += `
                         <tr>
                             <td>${result.quiz_title || 'Unknown Quiz'}</td>
-                            <td>
-                                <span class="result-score ${percentage >= 60 ? 'passing' : 'failing'}">
-                                    ${result.score || '?'}/${result.total_questions || '?'} (${percentage}%)
-                                </span>
-                            </td>
+                            <td>${score}/${total}</td>
+                            <td>${percentage}%</td>
                             <td>${formattedDate}</td>
                             <td>
                                 <a href="/results/${result.id}" class="btn btn-sm btn-outline">View Details</a>
@@ -233,16 +290,16 @@
                 });
 
                 resultsHTML += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
+                        </tbody>
+                    </table>
+                `;
 
                 container.innerHTML = resultsHTML;
             } catch (error) {
                 console.error('Error loading results:', error);
                 document.getElementById('results-content').innerHTML =
                     `<div class="error-message">Error loading results: ${error.message}</div>`;
+                document.getElementById('stats-container').innerHTML = '';
             }
         }
 

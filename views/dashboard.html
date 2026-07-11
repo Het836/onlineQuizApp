@@ -4,43 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    <div class="container">
-        <header>
-            <h1>Online Quiz System</h1>
-        </header>
 
-        <main id="main-content">
-            <!-- Navbar will be inserted here by JavaScript -->
-            <nav id="navbar"></nav>
+    <!-- Navbar will be injected by JavaScript -->
+    <nav id="navbar"></nav>
 
-            <section class="dashboard">
-                <div class="welcome-message">
-                    <h2>Welcome, <span id="user-name">Student</span>!</h2>
-                    <p>Ready to test your knowledge? Choose a quiz below to get started.</p>
-                </div>
-
-                <div class="dashboard-actions">
+    <main id="main-content" class="container">
+        <section class="dashboard">
+            <div class="dashboard-header">
+                <h1>Welcome Back</h1>
+                <div class="user-actions">
                     <a href="/results" class="btn btn-outline">View My Results</a>
                     <button id="logout-btn" class="btn btn-danger">Logout</button>
                 </div>
+            </div>
+            <div class="welcome-message">
+                <p>Hello, <span id="user-name">Student</span>! Ready to test your knowledge? Choose a quiz below to get started.</p>
+            </div>
 
-                <section class="quiz-cards-section">
-                    <h2>Available Quizzes</h2>
-                    <div id="quiz-cards-container">
-                        <p class="loading-message">Loading quizzes...</p>
-                    </div>
-                </section>
+            <section class="quiz-cards-section">
+                <h2>Available Quizzes</h2>
+                <div id="quiz-cards-container" class="quiz-grid grid-3">
+                    <p class="loading-message">Loading quizzes...</p>
+                </div>
             </section>
-        </main>
+        </section>
+    </main>
 
-        <footer>
+    <footer>
+        <div class="container">
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
     <script src="/js/main.js"></script>
     <script>
         // Check authentication and load user data
@@ -81,12 +83,16 @@
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/dashboard" class="nav-link active">Dashboard</a>
-                                <a href="/results" class="nav-link">Results</a>
-                                <a href="#" id="logout-link" class="nav-link">Logout</a>
-                            </div>
+                            <div class="logo">Online Quiz System</div>
+                            <ul class="nav-links">
+                                <li><a href="/" class="active">Dashboard</a></li>
+                                <li><a href="/results">Results</a></li>
+                                <li><a href="/profile">Profile</a></li>
+                                <li><a href="#" id="logout-link">Logout</a></li>
+                            </ul>
+                            <button class="menu-toggle" aria-label="Toggle menu">
+                                <span></span><span></span><span></span>
+                            </button>
                         </div>
                     </nav>
                 `;
@@ -99,20 +105,41 @@
                         await logout();
                     });
                 }
+
+                // Add mobile menu toggle
+                const menuToggle = navbar.querySelector('.menu-toggle');
+                const navLinks = navbar.querySelector('.nav-links');
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', () => {
+                        navLinks.classList.toggle('open');
+                    });
+                }
             } else {
                 // Guest navbar
                 navbar.innerHTML = `
                     <nav class="navbar">
-                        <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/" class="nav-link active">Home</a>
-                                <a href="/login" class="nav-link">Login</a>
-                                <a href="/register" class="nav-link">Register</a>
-                            </div>
+                        <div="container">
+                            <div class="logo">Online Quiz System</div>
+                            <ul class="nav-links">
+                                <li><a href="/">Home</a></li>
+                                <li><a href="/login">Login</a></li>
+                                <li><a href="/register">Register</a></li>
+                            </ul>
+                            <button class="menu-toggle" aria-label="Toggle menu">
+                                <span></span><span></span><span></span>
+                            </button>
                         </div>
                     </nav>
                 `;
+
+                // Add mobile menu toggle for guest
+                const menuToggle = navbar.querySelector('.menu-toggle');
+                const navLinks = navbar.querySelector('.nav-links');
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', () => {
+                        navLinks.classList.toggle('open');
+                    });
+                }
             }
         }
 
@@ -160,19 +187,18 @@
                     // Create quiz cards
                     quizzes.forEach(quiz => {
                         const card = document.createElement('div');
-                        card.className = 'quiz-card card';
+                        card.className = 'quiz-card';
                         card.innerHTML = `
-                            <div class="card-content">
-                                <h3>${quiz.title}</h3>
-                                <p class="quiz-description">${quiz.description || 'No description available'}</p>
-                                <div class="quiz-meta">
-                                    <span class="meta-item"><strong>Duration:</strong> ${quiz.duration_minutes} minutes</span>
-                                    <span class="meta-item status-badge ${quiz.is_active ? 'status-active' : 'status-inactive'}">
-                                        ${quiz.is_active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </div>
-                                <a href="/quiz.html?id=${quiz.id}" class="btn btn-primary w-100">Start Quiz</a>
+                            <h3>${quiz.title}</h3>
+                            <p class="quiz-description">${quiz.description || 'No description available'}</p>
+                            <div class="quiz-meta">
+                                <span class="meta-item"><strong>Questions:</strong> ${quiz.question_count}</span>
+                                <span class="meta-item"><strong>Time:</strong> ${quiz.duration_minutes} min</span>
+                                <span class="status-badge ${quiz.is_active ? 'status-active' : 'status-inactive'}">
+                                    ${quiz.is_active ? 'Active' : 'Inactive'}
+                                </span>
                             </div>
+                            <a href="/quiz.html?id=${quiz.id}" class="btn btn-primary w-full mt-auto">Start Quiz</a>
                         `;
                         container.appendChild(card);
                     });
@@ -182,15 +208,9 @@
             } catch (error) {
                 console.error('Error loading quizzes:', error);
                 document.getElementById('quiz-cards-container').innerHTML =
-                    '<p class="error-message">Error: ' + error.message + '</p>';
+                    '<p class="error-message">Error loading quizzes: ' + error.message + '</p>';
             }
         }
-
-        // Handle logout button click
-        document.getElementById('logout-btn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await logout();
-        });
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', checkAuthAndLoadData);

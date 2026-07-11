@@ -4,59 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    <div class="container">
-        <header>
-            <h1>Online Quiz System</h1>
-        </header>
 
-        <main id="main-content">
-            <section class="auth-form">
-                <div class="auth-card">
-                    <h2>Create Your Account</h2>
-                    <p>Join our quiz community and start testing your knowledge today!</p>
+    <div id="navbar" data-nav="guest" data-active="register"></div>
 
-                    <form id="register-form">
-                        <div class="form-group">
-                            <label for="full_name">Full Name</label>
-                            <input type="text" id="full_name" name="full_name" required placeholder="Enter your full name">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" required placeholder="Enter your email">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" required minlength="6" placeholder="Create a password">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="role">Account Type</label>
-                            <select id="role" name="role" required>
-                                <option value="student">Student</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">Register</button>
-                    </form>
-
-                    <p class="auth-footer">
-                        Already have an account? <a href="/login">Login here</a>
-                    </p>
+    <main id="main-content" class="container page">
+        <section class="auth-section">
+            <div class="auth-card card">
+                <div class="auth-header">
+                    <div class="logo">Online Quiz System</div>
+                    <h2>Create Account</h2>
+                    <p class="text-sm text-secondary">Join the learning community</p>
                 </div>
-            </section>
-        </main>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="full_name">Full Name</label>
+                        <input type="text" id="full_name" name="full_name" required placeholder="Enter your full name">
+                    </div>
 
-        <footer>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required minlength="6" placeholder="Create a password">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Account Type</label>
+                        <select id="role" name="role" required>
+                            <option value="student">Student</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">Register</button>
+                </form>
+
+                <p class="auth-footer">
+                    Already have an account? <a href="/login" class="btn btn-outline">Login</a>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
     <script src="/js/main.js"></script>
     <script>
         // Registration form handling
@@ -70,12 +75,12 @@
 
             // Basic validation
             if (!full_name || !email || !password) {
-                alert('Please fill in all required fields');
+                showError('Please fill in all required fields');
                 return;
             }
 
             if (password.length < 6) {
-                alert('Password must be at least 6 characters long');
+                showError('Password must be at least 6 characters long');
                 return;
             }
 
@@ -95,13 +100,43 @@
                 }
 
                 // Registration successful - redirect to login
-                alert('Registration successful! Please login to continue.');
-                window.location.href = '/login';
+                showSuccess('Registration successful! Please login.');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1500);
             } catch (error) {
-                alert('Registration failed: ' + error.message);
+                showError('Registration failed: ' + error.message);
                 console.error('Registration error:', error);
             }
         });
+
+        function showError(message) {
+            // Remove any existing error/success
+            const existing = document.querySelector('.alert');
+            if (existing) {
+                existing.remove();
+            }
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-error';
+            alertDiv.textContent = message;
+            const form = document.getElementById('register-form');
+            form.insertAdjacentElement('beforebegin', alertDiv);
+        }
+
+        function showSuccess(message) {
+            // Remove any existing alert
+            const existing = document.querySelector('.alert');
+            if (existing) {
+                existing.remove();
+            }
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success';
+            alertDiv.textContent = message;
+            const form = document.getElementById('register-form');
+            form.insertAdjacentElement('beforebegin', alertDiv);
+        }
     </script>
 </body>
 </html>

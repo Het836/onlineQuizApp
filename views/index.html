@@ -4,30 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    <div class="container">
-        <header>
-            <h1>Online Quiz System</h1>
-        </header>
 
-        <main id="main-content">
-            <section class="hero">
-                <h2>Welcome to Our Quiz Platform</h2>
-                <p>Test your knowledge, challenge yourself, and learn new concepts every day.</p>
-                <div class="cta-buttons">
-                    <a href="/login" class="btn btn-primary">Login</a>
-                    <a href="/register" class="btn btn-outline">Register</a>
+    <div id="navbar" data-nav="guest" data-active="home"></div>
+
+    <main id="main-content" class="container page">
+        <section class="hero fade-in">
+            <p class="hero-eyebrow">Learn. Practice. Excel.</p>
+            <h1>Master Any Subject with Interactive Quizzes</h1>
+            <p class="hero-subtitle">Test your knowledge, challenge yourself, and track your progress with a modern learning platform built for students and educators.</p>
+            <div class="btn-group">
+                <a href="/login" class="btn btn-primary">Login</a>
+                <a href="/register" class="btn btn-outline">Register</a>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2>Why Choose Our Platform</h2>
+            <div class="feature-cards grid-3">
+                <div class="feature-card card">
+                    <div class="feature-icon" aria-hidden="true">⏱</div>
+                    <h3>Timed Quizzes</h3>
+                    <p>Challenge yourself with time-bound quizzes to improve speed and accuracy under pressure.</p>
                 </div>
-            </section>
-        </main>
+                <div class="feature-card card">
+                    <div class="feature-icon" aria-hidden="true">✓</div>
+                    <h3>Instant Results</h3>
+                    <p>Get immediate feedback and detailed explanations after each quiz attempt.</p>
+                </div>
+                <div class="feature-card card">
+                    <div class="feature-icon" aria-hidden="true">📈</div>
+                    <h3>Track Progress</h3>
+                    <p>Monitor your performance over time and identify areas for improvement.</p>
+                </div>
+            </div>
+        </section>
+    </main>
 
-        <footer>
+    <footer>
+        <div class="container">
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
     <script src="/js/main.js"></script>
 </body>
 </html>

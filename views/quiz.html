@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Quiz System - Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <div class="container">
         <header>
             <h1>Online Quiz System</h1>
@@ -20,7 +24,7 @@
             <div class="quiz-container">
                 <a href="/" class="btn-back" id="btn-back-home">← Back to Home</a>
 
-                <div id="quiz-container">
+                <div id="questions-container">
                     <!-- Quiz content will be loaded here -->
                 </div>
             </div>
@@ -30,6 +34,8 @@
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
         </footer>
     </div>
+
+    <script src="/js/main.js"></script>
     <script src="/js/quiz.js"></script>
     <script>
         // Check authentication and update UI accordingly
@@ -69,12 +75,16 @@
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/dashboard" class="nav-link">Dashboard</a>
-                                <a href="/results" class="nav-link">Results</a>
-                                <a href="#" id="logout-link" class="nav-link">Logout</a>
-                            </div>
+                            <div class="logo">Online Quiz System</div>
+                            <ul class="nav-links">
+                                <li><a href="/dashboard" class="active">Dashboard</a></li>
+                                <li><a href="/results">Results</a></li>
+                                <li><a href="/profile">Profile</a></li>
+                                <li><a href="#" id="logout-link">Logout</a></li>
+                            </ul>
+                            <button class="menu-toggle" aria-label="Toggle menu">
+                                <span></span><span></span><span></span>
+                            </button>
                         </div>
                     </nav>
                 `;
@@ -87,20 +97,41 @@
                         await logout();
                     });
                 }
+
+                // Add mobile menu toggle
+                const menuToggle = navbar.querySelector('.menu-toggle');
+                const navLinks = navbar.querySelector('.nav-links');
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', () => {
+                        navLinks.classList.toggle('open');
+                    });
+                }
             } else {
                 // Guest navbar
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/" class="nav-link active">Home</a>
-                                <a href="/login" class="nav-link">Login</a>
-                                <a href="/register" class="nav-link">Register</a>
-                            </div>
+                            <div class="logo">Online Quiz System</div>
+                            <ul class="nav-links">
+                                <li><a href="/">Home</a></li>
+                                <li><a href="/login">Login</a></li>
+                                <li><a href="/register">Register</a></li>
+                            </ul>
+                            <button class="menu-toggle" aria-label="Toggle menu">
+                                <span></span><span></span><span></span>
+                            </button>
                         </div>
                     </nav>
                 `;
+
+                // Add mobile menu toggle for guest
+                const menuToggle = navbar.querySelector('.menu-toggle');
+                const navLinks = navbar.querySelector('.nav-links');
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', () => {
+                        navLinks.classList.toggle('open');
+                    });
+                }
             }
         }
 

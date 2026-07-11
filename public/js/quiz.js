@@ -1,35 +1,5 @@
 // Quiz JavaScript for Online Quiz System
 document.addEventListener('DOMContentLoaded', function() {
-    // API helper functions
-    window.api = {
-        get: async (url) => {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return await response.json();
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
-            }
-        },
-        post: async (url, data) => {
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return await response.json();
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
-            }
-        }
-    };
-
     // Get quiz ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get('id');
@@ -50,11 +20,11 @@ let currentQuizData = null;
 let currentQuizId = null;
 
 function showLoading() {
-    const quizContainer = document.getElementById('quiz-container');
-    quizContainer.innerHTML = `
+    const questionsContainer = document.getElementById('questions-container');
+    questionsContainer.innerHTML = `
         <div class="loading">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
+            <div class="spinner" role="status">
+                <span class="visually-hidden">Loading quiz...</span>
             </div>
             <p>Loading quiz...</p>
         </div>
@@ -62,12 +32,11 @@ function showLoading() {
 }
 
 function showError(message) {
-    const quizContainer = document.getElementById('quiz-container');
-    quizContainer.innerHTML = `
-        <div class="error">
-            <h3>Error</h3>
+    const questionsContainer = document.getElementById('questions-container');
+    questionsContainer.innerHTML = `
+        <div class="error-message">
             <p>${message}</p>
-            <a href="/" class="btn btn-secondary">Back to Home</a>
+            <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
         </div>
     `;
 }
@@ -76,122 +45,94 @@ function showQuiz(quizData) {
     currentQuizData = quizData;
     currentQuizId = quizData.id;
 
-    const quizContainer = document.getElementById('quiz-container');
+    const questionsContainer = document.getElementById('questions-container');
 
     // Create quiz header
     const quizHeader = document.createElement('div');
     quizHeader.className = 'quiz-header';
     quizHeader.innerHTML = `
-        <h1 class="quiz-title">${quizData.title}</h1>
+        <h1>${quizData.title}</h1>
         <p class="quiz-description">${quizData.description || 'No description available'}</p>
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
     `;
 
-    // Create progress indicator
-    const progressContainer = document.createElement('div');
-    progressContainer.className = 'progress-container';
-    progressContainer.innerHTML = `
-        <div class="progress-bar" id="progress-bar"></div>
-    `;
-    quizContainer.appendChild(progressContainer);
-
-    // Create quiz body
-    const quizBody = document.createElement('div');
-    quizBody.className = 'quiz-body';
-
-    // Add questions
-    if (quizData.questions && quizData.questions.length > 0) {
-        quizData.questions.forEach((question, index) => {
-            const questionElement = document.createElement('div');
-            questionElement.className = 'question';
-            questionElement.innerHTML = `
-                <div class="question-number">Question ${index + 1}:</div>
-                <div class="question-text">${question.question_text}</div>
-                <ul class="options">
-                    ${question.options.map((option, optIndex) => `
-                        <li class="option-item">
+    // Create questions form with submit button inside
+    const quizForm = document.createElement('form');
+    quizForm.id = 'quiz-form';
+    quizForm.innerHTML = `
+        <div class="questions-list">
+            ${quizData.questions.map((question, index) => `
+                <div class="question-card">
+                    <h2>Question ${index + 1}</h2>
+                    <p class="question-text">${question.question_text}</p>
+                    <div class="options-list">
+                        ${question.options.map(option => `
                             <label class="option-label">
                                 <input type="radio" name="question_${index}" value="${option.id}">
                                 <span class="option-text">${option.option_text}</span>
                             </label>
-                        </li>
-                    `).join('')}
-                </ul>
-            `;
-            quizBody.appendChild(questionElement);
-        });
-    } else {
-        quizBody.innerHTML = '<p>No questions available for this quiz.</p>';
-    }
-
-    // Create submit button container (sticky)
-    const stickyContainer = document.createElement('div');
-    stickyContainer.className = 'sticky-container';
-    stickyContainer.innerHTML = `
-        <button id="submit-quiz" class="btn btn-primary">Submit Quiz</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="submit-container">
+            <button id="submit-btn" class="btn btn-primary w-full">Submit Quiz</button>
+        </div>
     `;
 
-    // Append to container
-    quizContainer.innerHTML = '';
-    quizContainer.appendChild(quizHeader);
-    quizContainer.appendChild(quizBody);
-    quizContainer.appendChild(stickyContainer);
+    // Clear and append elements
+    questionsContainer.innerHTML = '';
+    questionsContainer.appendChild(quizHeader);
+    questionsContainer.appendChild(quizForm);
 
-    // Add event listener to submit button
-    const submitButton = document.getElementById('submit-quiz');
-    submitButton.addEventListener('click', handleSubmitQuiz);
+    // Add event listeners
+    quizForm.addEventListener('submit', handleSubmitQuiz);
 
-    // Add event listeners to radio buttons to update progress
-    const radios = quizBody.querySelectorAll('input[type="radio"]');
-    radios.forEach(radio => {
-        radio.addEventListener('change', updateAnswerCount);
-    });
-
-    // Update progress bar initially
-    updateProgressBar(0);
+    // Update progress initially
+    updateProgressBar();
 }
 
-function updateAnswerCount() {
+function updateProgressBar() {
     if (!currentQuizData || !currentQuizData.questions) return;
+
+    const form = document.getElementById('quiz-form');
+    if (!form) return;
 
     const answeredQuestions = [];
     currentQuizData.questions.forEach((question, index) => {
-        const selectedOption = document.querySelector(`input[name="question_${index}"]:checked`);
-        if (selectedOption) {
+        const selectedOption = form.elements[`question_${index}`];
+        if (selectedOption && selectedOption.value) {
             answeredQuestions.push(index);
         }
     });
 
-    // Find the highest answered question index
-    const highestAnswered = answeredQuestions.length > 0 ? Math.max(...answeredQuestions) : -1;
-    updateProgressBar(highestAnswered);
-}
-
-function updateProgressBar(currentQuestionIndex) {
-    if (!currentQuizData || !currentQuizData.questions) return;
-
     const progressBar = document.getElementById('progress-bar');
-    if (!progressBar) return;
-
-    const totalQuestions = currentQuizData.questions.length;
-    // If no questions answered, show 0%
-    // If at least one question answered, show progress based on highest answered
-    const progressPercent = currentQuestionIndex === -1 ? 0 : ((currentQuestionIndex + 1) / totalQuestions) * 100;
-    progressBar.style.width = `${progressPercent}%`;
+    if (progressBar) {
+        const totalQuestions = currentQuizData.questions.length;
+        const progressPercent = answeredQuestions.length === 0 ? 0 :
+            ((answeredQuestions.length / totalQuestions) * 100);
+        progressBar.style.width = `${progressPercent}%`;
+    }
 }
 
-async function handleSubmitQuiz() {
+async function handleSubmitQuiz(e) {
+    e.preventDefault();
+
     if (!currentQuizData || !currentQuizData.questions) {
         showError('Quiz data not available');
         return;
     }
 
-    // Collect answers
+    const form = document.getElementById('quiz-form');
     const answers = [];
     let hasUnanswered = false;
 
     currentQuizData.questions.forEach((question, index) => {
-        const selectedOption = document.querySelector(`input[name="question_${index}"]:checked`);
-        if (selectedOption) {
+        const selectedOption = form.elements[`question_${index}`];
+        if (selectedOption && selectedOption.value) {
             answers.push({
                 question_id: question.id,
                 selected_option_id: parseInt(selectedOption.value)
@@ -201,53 +142,58 @@ async function handleSubmitQuiz() {
         }
     });
 
-    // If there are unanswered questions, ask for confirmation
     if (hasUnanswered) {
         if (!confirm('You have unanswered questions. Submit anyway?')) {
             return;
         }
     }
 
-    // Disable the submit button to prevent double submission
-    const submitButton = document.getElementById('submit-quiz');
-    submitButton.disabled = true;
-    submitButton.textContent = 'Submitting...';
+    // Disable submit button
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+    }
 
     try {
-        // Send the answers to the backend
-        const response = await api.post(`/api/quizzes/${currentQuizId}/submit`, { answers });
+        const response = await fetch(`/api/quizzes/${currentQuizId}/submit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ answers })
+        });
 
-        if (response.status === 'success') {
-            showResult(response.data);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            showResult(result.data);
         } else {
-            showError('Failed to submit quiz: ' + response.message);
-            // Re-enable the button on error
-            submitButton.disabled = false;
-            submitButton.textContent = 'Submit Quiz';
+            throw new Error('Invalid response from server');
         }
     } catch (error) {
         console.error('Error submitting quiz:', error);
         showError('An error occurred while submitting the quiz. Please try again.');
-        // Re-enable the button on error
-        submitButton.disabled = false;
-        submitButton.textContent = 'Submit Quiz';
+
+        // Re-enable button
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Quiz';
+        }
     }
 }
 
 function showResult(result) {
-    const quizContainer = document.getElementById('quiz-container');
+    const questionsContainer = document.getElementById('questions-container');
 
-    // Disable all radio buttons
-    const radios = quizContainer.querySelectorAll('input[type="radio"]');
-    radios.forEach(radio => {
-        radio.disabled = true;
-    });
+    const passed = result.percentage >= 60; // Assuming 60% is passing
 
-    // Determine if passed (assuming 60% is passing)
-    const passed = result.percentage >= 60;
-
-    // Build the result display
-    let resultHTML = `
+    questionsContainer.innerHTML = `
         <div class="result-container">
             <div class="result-header">
                 <h2>Quiz Completed</h2>
@@ -279,68 +225,63 @@ function showResult(result) {
                 <p>Review your answers below. Correct answers are marked in green, incorrect in red.</p>
             </div>
             <ol class="question-results">
-    `;
+                ${result.results.map((questionResult, index) => {
+                    const question = currentQuizData.questions[index];
+                    const isCorrect = questionResult.correct;
+                    const selectedOptionId = questionResult.selected_option;
+                    const correctOptionId = questionResult.correct_option;
 
-    result.results.forEach((questionResult, index) => {
-        const question = currentQuizData.questions[index];
-        const isCorrect = questionResult.correct;
-        const selectedOptionId = questionResult.selected_option;
-        const correctOptionId = questionResult.correct_option;
+                    // Find the selected option text and correct option text
+                    const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
+                    const correctOption = question.options.find(opt => opt.id === correctOptionId);
 
-        // Find the selected option text and correct option text
-        const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
-        const correctOption = question.options.find(opt => opt.id === correctOptionId);
+                    return `
+                        <li class="question-result ${isCorrect ? 'correct' : 'incorrect'}">
+                            <div class="question-header">
+                                <span class="question-number">Question ${index + 1}:</span>
+                                <span class="question-text">${question.question_text}</span>
+                            </div>
+                            <div class="question-meta">
+                                <span class="result-icon">${isCorrect ? '✓' : '✗'}</span>
+                                <span class="result-text">${isCorrect ? 'Correct!' : 'Incorrect'}</span>
+                            </div>
+                            <div class="options-list">
+                                ${question.options.map(option => {
+                                    let className = '';
+                                    let title = '';
 
-        resultHTML += `
-            <li class="question-result ${isCorrect ? 'correct' : 'incorrect'}">
-                <div class="question-header">
-                    <span class="question-number">Question ${index + 1}:</span>
-                    <span class="question-text">${question.question_text}</span>
-                </div>
-                <div class="question-meta">
-                    <span class="result-icon">${isCorrect ? '✓' : '✗'}</span>
-                    <span class="result-text">${isCorrect ? 'Correct!' : 'Incorrect'}</span>
-                </div>
-                <div class="options-list">
-                    ${question.options.map(option => {
-                        let className = '';
-                        let title = '';
+                                    if (option.id === correctOptionId && option.id === selectedOptionId) {
+                                        // Correctly selected
+                                        className = 'correct-selected';
+                                        title = 'Correct answer (your selection)';
+                                    } else if (option.id === correctOptionId) {
+                                        // Correct answer (not selected or selected but wrong)
+                                        className = 'correct-answer';
+                                        title = 'Correct answer';
+                                    } else if (option.id === selectedOptionId) {
+                                        // Incorrectly selected
+                                        className = 'incorrect-selected';
+                                        title = 'Your selection (incorrect)';
+                                    }
 
-                        if (option.id === correctOptionId && option.id === selectedOptionId) {
-                            // Correctly selected
-                            className = 'correct-selected';
-                            title = 'Correct answer (your selection)';
-                        } else if (option.id === correctOptionId) {
-                            // Correct answer (not selected or selected but wrong)
-                            className = 'correct-answer';
-                            title = 'Correct answer';
-                        } else if (option.id === selectedOptionId) {
-                            // Incorrectly selected
-                            className = 'incorrect-selected';
-                            title = 'Your selection (incorrect)';
-                        }
-
-                        return `<label class="option-label ${className}" title="${title}">
-                                    <input type="radio" name="question_result_${index}" value="${option.id}" disabled>
-                                    <span class="option-text">${option.option_text}</span>
-                                </label>`;
-                    }).join('')}
-                </div>
-                ${!selectedOptionId ? `<p class="correct-answer-text">Correct answer: ${correctOption.option_text}</p>` : ''}
-            </li>
-        `;
-    });
-
-    resultHTML += `
+                                    return `<label class="option-label ${className}" title="${title}">
+                                                <input type="radio" name="question_result_${index}" value="${option.id}" disabled>
+                                                <span class="option-text">${option.option_text}</span>
+                                            </label>`;
+                                }).join('')}
+                            </div>
+                            ${!selectedOptionId ? `<p class="correct-answer-text">Correct answer: ${correctOption.option_text}</p>` : ''}
+                        </li>
+                    `;
+                }).join('')}
             </ol>
+
             <div class="result-actions">
                 <button id="retake-quiz" class="btn btn-warning">Retake Quiz</button>
-                <button id="back-to-home" class="btn btn-secondary">Back to Home</button>
+                <button id="back-to-dashboard" class="btn btn-secondary">Back to Dashboard</button>
             </div>
         </div>
     `;
-
-    quizContainer.innerHTML = resultHTML;
 
     // Add event listeners for the new buttons
     document.getElementById('retake-quiz').addEventListener('click', () => {
@@ -348,15 +289,20 @@ function showResult(result) {
         showQuiz(currentQuizData);
     });
 
-    document.getElementById('back-to-home').addEventListener('click', () => {
-        // Go back to the home page (quiz list)
-        window.location.href = '/';
+    document.getElementById('back-to-dashboard').addEventListener('click', () => {
+        window.location.href = '/dashboard';
     });
 }
 
 async function fetchQuizData(quizId) {
     try {
-        const data = await api.get(`/api/quizzes/${quizId}`);
+        const response = await fetch(`/api/quizzes/${quizId}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
 
         if (data.status === 'success') {
             showQuiz(data.data);

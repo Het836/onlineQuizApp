@@ -4,46 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    <div class="container">
-        <header>
-            <h1>Online Quiz System</h1>
-        </header>
 
-        <main id="main-content">
-            <section class="auth-form">
-                <div class="auth-card">
-                    <h2>Login to Your Account</h2>
-                    <p>Welcome back! Please enter your credentials to access your dashboard.</p>
+    <div id="navbar" data-nav="guest" data-active="login"></div>
 
-                    <form id="login-form">
-                        <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" required placeholder="Enter your email">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" required placeholder="Enter your password">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
-                    </form>
-
-                    <p class="auth-footer">
-                        Don't have an account? <a href="/register">Register here</a>
-                    </p>
+    <main id="main-content" class="container page">
+        <section class="auth-section">
+            <div class="auth-card card">
+                <div class="auth-header">
+                    <div class="logo">Online Quiz System</div>
+                    <h2>Welcome Back</h2>
+                    <p class="text-sm text-secondary">Sign in to continue to your account</p>
                 </div>
-            </section>
-        </main>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    </div>
 
-        <footer>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">Login</button>
+                </form>
+
+                <p class="auth-footer">
+                    Forgot password? <a href="#">Reset it here</a>
+                </p>
+                <p class="auth-footer">
+                    Don't have an account? <a href="/register" class="btn btn-outline">Register</a>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
             <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
     <script src="/js/main.js"></script>
     <script>
         // Login form handling
@@ -55,7 +64,7 @@
 
             // Basic validation
             if (!email || !password) {
-                alert('Please fill in all fields');
+                showError('Please fill in all fields');
                 return;
             }
 
@@ -77,10 +86,25 @@
                 // Login successful - redirect to dashboard
                 window.location.href = '/dashboard';
             } catch (error) {
-                alert('Login failed: ' + error.message);
+                showError('Login failed: ' + error.message);
                 console.error('Login error:', error);
             }
         });
+
+        function showError(message) {
+            // Remove any existing error
+            const existingError = document.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            // Insert after form header
+            const form = document.getElementById('login-form');
+            form.insertAdjacentElement('beforebegin', errorDiv);
+        }
     </script>
 </body>
 </html>
