@@ -10,30 +10,25 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- <a href="#main-content" class="skip-link">Skip to main content</a> -->
 
-    <!-- Navbar will be injected by JavaScript -->
-    <nav id="navbar"></nav>
+    <div id="navbar" data-nav="auth" data-active="dashboard"></div>
 
-    <main id="main-content" class="container">
-        <section class="dashboard">
-            <div class="dashboard-header">
-                <h1>Welcome Back</h1>
-                <div class="user-actions">
-                    <a href="/results" class="btn btn-outline">View My Results</a>
-                    <button id="logout-btn" class="btn btn-danger">Logout</button>
-                </div>
+    <main id="main-content" class="container page">
+        <section class="dashboard-header">
+            <div class="dashboard-user-info">
+                <h2>Welcome back, <span id="user-name"></span>!</h2>
+                <p class="welcome-message text-secondary">Ready to test your knowledge?</p>
             </div>
-            <div class="welcome-message">
-                <p>Hello, <span id="user-name">Student</span>! Ready to test your knowledge? Choose a quiz below to get started.</p>
+            <div class="user-actions">
+                <a href="/results" class="btn btn-primary">View Results</a>
+                <a href="/profile" class="btn btn-outline">My Profile</a>
             </div>
+        </section>
 
-            <section class="quiz-cards-section">
-                <h2>Available Quizzes</h2>
-                <div id="quiz-cards-container" class="quiz-grid grid-3">
-                    <p class="loading-message">Loading quizzes...</p>
-                </div>
-            </section>
+        <section class="quiz-cards-section">
+            <h2>Available Quizzes</h2>
+            <div id="quiz-cards-container" class="quiz-grid grid-3"></div>
         </section>
     </main>
 
@@ -43,172 +38,77 @@
         </div>
     </footer>
 
+    <script src="/js/components/navbar.js"></script>
     <script src="/js/main.js"></script>
     <script>
-        // Check authentication and load user data
+        // Check authentication and load quiz data
         async function checkAuthAndLoadData() {
             try {
                 const response = await fetch('/api/auth/me');
-                if (!response.ok) {
-                    throw new Error('Not authenticated');
-                }
-
                 const data = await response.json();
-                if (data.status === 'success') {
-                    // Update user name in welcome message
-                    document.getElementById('user-name').textContent =
-                        data.data.full_name || 'User';
 
-                    // Load navigation bar
-                    loadNavbar(true, data.data.role);
+                if (!response.ok || data.status !== 'success') {
+                    window.location.href = '/login';
+                    return;
+                }
 
-                    // Load available quizzes
-                    loadAvailableQuizzes();
+                // Set user name in the welcome message
+                const name = data.data.full_name ||
+                           (data.data.email ? data.data.email.split('@')[0] : '') ||
+                           'User';
+                document.getElementById('user-name').textContent = name;
+
+                // Load quizzes
+                const quizResponse = await fetch('/api/quizzes');
+                const quizData = await quizResponse.json();
+
+                const container = document.getElementById('quiz-cards-container');
+                let quizArray = [];
+
+                if (!quizResponse.ok) {
+                    throw new Error('Failed to fetch quizzes');
+                }
+
+                // Normalize response shape
+                if (quizData && quizData.status === 'success' && Array.isArray(quizData.data)) {
+                    quizArray = quizData.data;
+                } else if (Array.isArray(quizData)) {
+                    quizArray = quizData;
                 } else {
-                    throw new Error('Invalid response');
+                    quizArray = [];
                 }
-            } catch (error) {
-                // Not authenticated - redirect to login
-                console.warn('Not authenticated:', error.message);
-                window.location.href = '/login';
-            }
-        }
 
-        // Load navigation bar based on auth status
-        function loadNavbar(isAuthenticated, userRole = 'student') {
-            const navbar = document.getElementById('navbar');
+                if (quizArray.length === 0) {
+                    container.innerHTML = '<p class="text-secondary">No quizzes available yet.</p>';
+                    return;
+                }
 
-            if (isAuthenticated) {
-                // Authenticated user navbar
-                navbar.innerHTML = `
-                    <nav class="navbar">
-                        <div class="container">
-                            <div class="logo">Online Quiz System</div>
-                            <ul class="nav-links">
-                                <li><a href="/" class="active">Dashboard</a></li>
-                                <li><a href="/results">Results</a></li>
-                                <li><a href="/profile">Profile</a></li>
-                                <li><a href="#" id="logout-link">Logout</a></li>
-                            </ul>
-                            <button class="menu-toggle" aria-label="Toggle menu">
-                                <span></span><span></span><span></span>
-                            </button>
+                container.innerHTML = ''; // Clear loading state
+
+                quizArray.forEach(quiz => {
+                    const card = document.createElement('div');
+                    card.className = 'quiz-card card';
+                    card.innerHTML = `
+                        <h3 class="quiz-title text-primary">${quiz.title}</h3>
+                        <p class="quiz-description text-secondary">${quiz.description || 'No description available'}</p>
+                        <div class="quiz-meta">
+                            <span class="meta-item"><i class="fas fa-question"></i> <span class="quiz-question-count">${quiz.question_count || 0}</span> Questions</span>
+                            <span class="meta-item"><span class="quiz-duration">${quiz.time_limit || 0}</span> mins</span>
+                            <span class="status-badge" id="quiz-status-badge-${quiz.id}">${quiz.is_active ? 'Active' : 'Inactive'}</span>
                         </div>
-                    </nav>
-                `;
+                        <a href="/quiz.html?id=${quiz.id}" class="btn btn-primary w-full">Start Quiz</a>
+                    `;
+                    // Set status badge class and text
+                    const badge = card.querySelector(`#quiz-status-badge-${quiz.id}`);
+                    badge.className = `status-badge ${quiz.is_active ? 'badge-success' : 'badge-secondary'}`;
+                    badge.textContent = quiz.is_active ? 'Active' : 'Inactive';
 
-                // Add logout event listener
-                const logoutLink = navbar.querySelector('#logout-link');
-                if (logoutLink) {
-                    logoutLink.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        await logout();
-                    });
-                }
-
-                // Add mobile menu toggle
-                const menuToggle = navbar.querySelector('.menu-toggle');
-                const navLinks = navbar.querySelector('.nav-links');
-                if (menuToggle && navLinks) {
-                    menuToggle.addEventListener('click', () => {
-                        navLinks.classList.toggle('open');
-                    });
-                }
-            } else {
-                // Guest navbar
-                navbar.innerHTML = `
-                    <nav class="navbar">
-                        <div="container">
-                            <div class="logo">Online Quiz System</div>
-                            <ul class="nav-links">
-                                <li><a href="/">Home</a></li>
-                                <li><a href="/login">Login</a></li>
-                                <li><a href="/register">Register</a></li>
-                            </ul>
-                            <button class="menu-toggle" aria-label="Toggle menu">
-                                <span></span><span></span><span></span>
-                            </button>
-                        </div>
-                    </nav>
-                `;
-
-                // Add mobile menu toggle for guest
-                const menuToggle = navbar.querySelector('.menu-toggle');
-                const navLinks = navbar.querySelector('.nav-links');
-                if (menuToggle && navLinks) {
-                    menuToggle.addEventListener('click', () => {
-                        navLinks.classList.toggle('open');
-                    });
-                }
-            }
-        }
-
-        // Handle logout
-        async function logout() {
-            try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST'
+                    container.appendChild(card);
                 });
-
-                if (response.ok) {
-                    window.location.href = '/';
-                } else {
-                    const data = await response.json();
-                    throw new Error(data.message || 'Logout failed');
-                }
             } catch (error) {
-                console.error('Logout error:', error);
-                // Even if logout fails on server, redirect to login
-                window.location.href = '/login';
-            }
-        }
-
-        // Load available quizzes for dashboard
-        async function loadAvailableQuizzes() {
-            try {
-                const response = await fetch('/api/quizzes');
-                if (!response.ok) {
-                    throw new Error('Failed to load quizzes');
-                }
-
-                const data = await response.json();
-                if (data.status === 'success' && Array.isArray(data.data)) {
-                    const quizzes = data.data;
-                    const container = document.getElementById('quiz-cards-container');
-
-                    if (quizzes.length === 0) {
-                        container.innerHTML = '<p class="no-quizzes-message">No quizzes available at the moment.</p>';
-                        return;
-                    }
-
-                    // Clear loading message
-                    container.innerHTML = '';
-
-                    // Create quiz cards
-                    quizzes.forEach(quiz => {
-                        const card = document.createElement('div');
-                        card.className = 'quiz-card';
-                        card.innerHTML = `
-                            <h3>${quiz.title}</h3>
-                            <p class="quiz-description">${quiz.description || 'No description available'}</p>
-                            <div class="quiz-meta">
-                                <span class="meta-item"><strong>Questions:</strong> ${quiz.question_count}</span>
-                                <span class="meta-item"><strong>Time:</strong> ${quiz.duration_minutes} min</span>
-                                <span class="status-badge ${quiz.is_active ? 'status-active' : 'status-inactive'}">
-                                    ${quiz.is_active ? 'Active' : 'Inactive'}
-                                </span>
-                            </div>
-                            <a href="/quiz.html?id=${quiz.id}" class="btn btn-primary w-full mt-auto">Start Quiz</a>
-                        `;
-                        container.appendChild(card);
-                    });
-                } else {
-                    throw new Error('Invalid quiz data format');
-                }
-            } catch (error) {
-                console.error('Error loading quizzes:', error);
+                console.error('Error loading dashboard:', error);
                 document.getElementById('quiz-cards-container').innerHTML =
-                    '<p class="error-message">Error loading quizzes: ' + error.message + '</p>';
+                    `<p class="error-message">Error loading dashboard: ${error.message}</p>`;
             }
         }
 

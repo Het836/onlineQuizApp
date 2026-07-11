@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- <a href="#main-content" class="skip-link">Skip to main content</a> -->
     <div class="container">
         <header>
             <h1>Online Quiz System</h1>
@@ -30,9 +30,11 @@
         </main>
 
         <footer>
-            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+            <div class="container">
+                <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+            </div>
         </footer>
-    </div>
+
     <script src="/js/main.js"></script>
     <script>
         // Check authentication and load result details
@@ -186,7 +188,7 @@
                                 <h3>${quizTitle}</h3>
                                 <p><strong>Score:</strong> ${attempt.score || '?'} out of ${attempt.total_questions || '?'}</p>
                                 <p><strong>Percentage:</strong> ${percentage}%</p>
-                                <p><strong>Completed:</strong> ${formattedDate: ${formattedDate}</p>
+                                <p><strong>Completed:</strong> ${formattedDate}</p>
                             </div>
                         </div>
                     `;
@@ -201,13 +203,13 @@
                                 <p>Detailed question-by-question review is not available in this view.</p>
                                 <p>Your answers have been recorded and can be reviewed by your instructor if applicable.</p>
                             </div>
-                        `;
+                        ";
                     } else if (attempt.answers) {
                         detailsHTML += `
                             <div class="note">
                                 <p>Answer details are not available for this attempt.</p>
                             </div>
-                        `;
+                        ";
                     }
 
                     detailsHTML += `
@@ -228,7 +230,7 @@
         }
 
         // Initialize page
-        document.addEventListener('DOMContentLoaded', checkAuthAndLoadResultDetails);
+        document.addEventListener('DOMContentOLD', checkAuthAndLoadResultDetails);
     </script>
 </body>
 </html>

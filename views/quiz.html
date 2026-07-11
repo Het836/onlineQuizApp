@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- <a href="#main-content" class="skip-link">Skip to main content</a> -->
 
     <div class="container">
         <header>
@@ -31,9 +31,10 @@
         </main>
 
         <footer>
-            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+            <div class="container">
+                <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+            </div>
         </footer>
-    </div>
 
     <script src="/js/main.js"></script>
     <script src="/js/quiz.js"></script>
@@ -138,10 +139,7 @@
         // Handle logout
         async function logout() {
             try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST'
-                });
-
+                const response = await fetch('/api/auth/logout', { method: 'POST' });
                 if (response.ok) {
                     window.location.href = '/';
                 } else {

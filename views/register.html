@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- <a href="#main-content" class="skip-link">Skip to main content</a> -->
 
     <div id="navbar" data-nav="guest" data-active="register"></div>
 
@@ -62,6 +62,7 @@
         </div>
     </footer>
 
+    <script src="/js/components/navbar.js"></script>
     <script src="/js/main.js"></script>
     <script>
         // Registration form handling
@@ -121,6 +122,7 @@
             alertDiv.className = 'alert alert-error';
             alertDiv.textContent = message;
             const form = document.getElementById('register-form');
+            // Insert before form
             form.insertAdjacentElement('beforebegin', alertDiv);
         }
 
@@ -135,6 +137,7 @@
             alertDiv.className = 'alert alert-success';
             alertDiv.textContent = message;
             const form = document.getElementById('register-form');
+            // Insert before form
             form.insertAdjacentElement('beforebegin', alertDiv);
         }
     </script>
