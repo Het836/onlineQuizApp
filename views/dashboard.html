@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Online Quiz System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="container">
+        <header>
+            <h1>Online Quiz System</h1>
+        </header>
+
+        <main id="main-content">
+            <!-- Navbar will be inserted here by JavaScript -->
+            <nav id="navbar"></nav>
+
+            <section class="dashboard">
+                <div class="welcome-message">
+                    <h2>Welcome, <span id="user-name">Student</span>!</h2>
+                    <p>Ready to test your knowledge? Choose a quiz below to get started.</p>
+                </div>
+
+                <div class="dashboard-actions">
+                    <a href="/results" class="btn btn-outline">View My Results</a>
+                    <button id="logout-btn" class="btn btn-danger">Logout</button>
+                </div>
+
+                <section class="quiz-cards-section">
+                    <h2>Available Quizzes</h2>
+                    <div id="quiz-cards-container">
+                        <p class="loading-message">Loading quizzes...</p>
+                    </div>
+                </section>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="/js/main.js"></script>
+    <script>
+        // Check authentication and load user data
+        async function checkAuthAndLoadData() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) {
+                    throw new Error('Not authenticated');
+                }
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // Update user name in welcome message
+                    document.getElementById('user-name').textContent =
+                        data.data.full_name || 'User';
+
+                    // Load navigation bar
+                    loadNavbar(true, data.data.role);
+
+                    // Load available quizzes
+                    loadAvailableQuizzes();
+                } else {
+                    throw new Error('Invalid response');
+                }
+            } catch (error) {
+                // Not authenticated - redirect to login
+                console.warn('Not authenticated:', error.message);
+                window.location.href = '/login';
+            }
+        }
+
+        // Load navigation bar based on auth status
+        function loadNavbar(isAuthenticated, userRole = 'student') {
+            const navbar = document.getElementById('navbar');
+
+            if (isAuthenticated) {
+                // Authenticated user navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/dashboard" class="nav-link active">Dashboard</a>
+                                <a href="/results" class="nav-link">Results</a>
+                                <a href="#" id="logout-link" class="nav-link">Logout</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+
+                // Add logout event listener
+                const logoutLink = navbar.querySelector('#logout-link');
+                if (logoutLink) {
+                    logoutLink.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await logout();
+                    });
+                }
+            } else {
+                // Guest navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link active">Home</a>
+                                <a href="/login" class="nav-link">Login</a>
+                                <a href="/register" class="nav-link">Register</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+            }
+        }
+
+        // Handle logout
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Logout failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Even if logout fails on server, redirect to login
+                window.location.href = '/login';
+            }
+        }
+
+        // Load available quizzes for dashboard
+        async function loadAvailableQuizzes() {
+            try {
+                const response = await fetch('/api/quizzes');
+                if (!response.ok) {
+                    throw new Error('Failed to load quizzes');
+                }
+
+                const data = await response.json();
+                if (data.status === 'success' && Array.isArray(data.data)) {
+                    const quizzes = data.data;
+                    const container = document.getElementById('quiz-cards-container');
+
+                    if (quizzes.length === 0) {
+                        container.innerHTML = '<p class="no-quizzes-message">No quizzes available at the moment.</p>';
+                        return;
+                    }
+
+                    // Clear loading message
+                    container.innerHTML = '';
+
+                    // Create quiz cards
+                    quizzes.forEach(quiz => {
+                        const card = document.createElement('div');
+                        card.className = 'quiz-card card';
+                        card.innerHTML = `
+                            <div class="card-content">
+                                <h3>${quiz.title}</h3>
+                                <p class="quiz-description">${quiz.description || 'No description available'}</p>
+                                <div class="quiz-meta">
+                                    <span class="meta-item"><strong>Duration:</strong> ${quiz.duration_minutes} minutes</span>
+                                    <span class="meta-item status-badge ${quiz.is_active ? 'status-active' : 'status-inactive'}">
+                                        ${quiz.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                                <a href="/quiz.html?id=${quiz.id}" class="btn btn-primary w-100">Start Quiz</a>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                } else {
+                    throw new Error('Invalid quiz data format');
+                }
+            } catch (error) {
+                console.error('Error loading quizzes:', error);
+                document.getElementById('quiz-cards-container').innerHTML =
+                    '<p class="error-message">Error: ' + error.message + '</p>';
+            }
+        }
+
+        // Handle logout button click
+        document.getElementById('logout-btn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await logout();
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', checkAuthAndLoadData);
+    </script>
+</body>
+</html>

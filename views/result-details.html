@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result Details - Online Quiz System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="container">
+        <header>
+            <h1>Online Quiz System</h1>
+        </header>
+
+        <main id="main-content">
+            <!-- Navbar will be inserted here by JavaScript -->
+            <nav id="navbar"></nav>
+
+            <section class="result-details">
+                <div class="result-header">
+                    <h2>Quiz Result Details</h2>
+                    <a href="/results" class="btn btn-outline">Back to Results</a>
+                </div>
+
+                <div id="result-detail-content">
+                    <p class="loading-message">Loading result details...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="/js/main.js"></script>
+    <script>
+        // Check authentication and load result details
+        async function checkAuthAndLoadResultDetails() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) {
+                    throw new Error('Not authenticated');
+                }
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // Load navigation bar
+                    loadNavbar(true, data.data.role);
+
+                    // Get result ID from URL path (/results/:id)
+                    const pathParts = window.location.pathname.split('/');
+                    const resultId = pathParts[pathParts.length - 1];
+
+                    // Validate that it's a numeric ID
+                    if (!resultId || isNaN(resultId) || resultId === 'results') {
+                        window.location.href = '/results';
+                        return;
+                    }
+
+                    // Load result details
+                    loadResultDetails(resultId);
+                } else {
+                    throw new Error('Invalid response');
+                }
+            } catch (error) {
+                // Not authenticated - redirect to login
+                console.warn('Not authenticated:', error.message);
+                window.location.href = '/login';
+            }
+        }
+
+        // Load navigation bar based on auth status
+        function loadNavbar(isAuthenticated, userRole = 'student') {
+            const navbar = document.getElementById('navbar');
+
+            if (isAuthenticated) {
+                // Authenticated user navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/dashboard" class="nav-link">Dashboard</a>
+                                <a href="/results" class="nav-link">Results</a>
+                                <a href="#" id="logout-link" class="nav-link">Logout</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+
+                // Add logout event listener
+                const logoutLink = navbar.querySelector('#logout-link');
+                if (logoutLink) {
+                    logoutLink.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await logout();
+                    });
+                }
+            } else {
+                // Guest navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link active">Home</a>
+                                <a href="/login" class="nav-link">Login</a>
+                                <a href="/register" class="nav-link">Register</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+            }
+        }
+
+        // Handle logout
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Logout failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Even if logout fails on server, redirect to login
+                window.location.href = '/login';
+            }
+        }
+
+        // Load result details by ID
+        async function loadResultDetails(resultId) {
+            try {
+                const response = await fetch(`/api/attempts/${resultId}`);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        window.location.href = '/results';
+                        return;
+                    }
+                    throw new Error('Failed to load result details');
+                }
+
+                const data = await response.json();
+                const container = document.getElementById('result-detail-content');
+
+                if (data.status === 'success' && data.data) {
+                    const attempt = data.data;
+
+                    // Get quiz title from the attempt object (might be in different places)
+                    const quizTitle = attempt.quiz_title ||
+                                     (attempt.quiz && attempt.quiz.title) ||
+                                     'Unknown Quiz';
+
+                    // Format date - try submitted_at first, then started_at, then created_at
+                    const dateString = attempt.submitted_at ||
+                                      attempt.started_at ||
+                                      attempt.created_at;
+                    const date = new Date(dateString);
+                    const formattedDate = date.toLocaleDateString() + ' ' +
+                                        date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    // Determine if passed (assuming 60% is passing)
+                    // Calculate percentage if not directly available
+                    let percentage = attempt.percentage;
+                    if (percentage === undefined && attempt.score !== undefined && attempt.total_questions !== undefined) {
+                        percentage = Math.round((attempt.score / attempt.total_questions) * 100);
+                    } else if (percentage === undefined) {
+                        percentage = 0; // fallback
+                    }
+
+                    const passed = percentage >= 60;
+
+                    let detailsHTML = `
+                        <div class="result-summary">
+                            <div class="result-score-badge ${passed ? 'passed' : 'failed'}">
+                                <span class="badge-score">${percentage}%</span>
+                                <span class="badge-label">${passed ? 'PASSED' : 'FAILED'}</span>
+                            </div>
+                            <div class="result-info">
+                                <h3>${quizTitle}</h3>
+                                <p><strong>Score:</strong> ${attempt.score || '?'} out of ${attempt.total_questions || '?'}</p>
+                                <p><strong>Percentage:</strong> ${percentage}%</p>
+                                <p><strong>Completed:</strong> ${formattedDate: ${formattedDate}</p>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add question-by-question breakdown if available
+                    if (attempt.answers && Array.isArray(attempt.answers) && attempt.answers.length > 0) {
+                        // We would need the questions and options to show detailed breakdown
+                        // Since we don't have that from this endpoint alone, we'll show a simplified view
+                        detailsHTML += `
+                            <div class="question-breakdown">
+                                <h3>Answer Summary</h3>
+                                <p>Detailed question-by-question review is not available in this view.</p>
+                                <p>Your answers have been recorded and can be reviewed by your instructor if applicable.</p>
+                            </div>
+                        `;
+                    } else if (attempt.answers) {
+                        detailsHTML += `
+                            <div class="note">
+                                <p>Answer details are not available for this attempt.</p>
+                            </div>
+                        `;
+                    }
+
+                    detailsHTML += `
+                        <div class="result-actions">
+                            <a href="/results" class="btn btn-outline">Back to Results</a>
+                        </div>
+                    `;
+
+                    container.innerHTML = detailsHTML;
+                } else {
+                    throw new Error('Invalid result data');
+                }
+            } catch (error) {
+                console.error('Error loading result details:', error);
+                document.getElementById('result-detail-content').innerHTML =
+                    `<div class="error-message">Error loading result details: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', checkAuthAndLoadResultDetails);
+    </script>
+</body>
+</html>

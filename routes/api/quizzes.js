@@ -5,6 +5,7 @@ const Quiz = require('../../Models/Quiz.js');
 const Question = require('../../Models/Question.js');
 const Option = require('../../Models/Option.js');
 const QuizAttempt = require('../../Models/QuizAttempt.js');
+const requireAuth = require('../../middleware/requireAuth');
 
 // Validation functions
 const validateQuiz = (quiz) => {
@@ -200,7 +201,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/quizzes/:id/submit - Submit a quiz attempt
-router.post('/:id/submit', async (req, res) => {
+router.post('/:id/submit', requireAuth, async (req, res) => {
   try {
     const quizId = parseInt(req.params.id);
     if (isNaN(quizId)) {
@@ -341,7 +342,7 @@ router.post('/:id/submit', async (req, res) => {
 
     // Persist attempt
     const attemptData = {
-      user_id: null,
+      user_id: req.session.userId, // Now we set the user_id from the session
       quiz_id: quizId,
       total_questions: totalQuestions,
       correct_answers: correctAnswers,
@@ -372,6 +373,81 @@ router.post('/:id/submit', async (req, res) => {
       message: 'Failed to submit quiz'
     });
   }
+});
+
+// GET /api/quizzes/:id/results - Get all attempts for a quiz (requires authentication)
+router.get('/:id/results', requireAuth, async (req, res) => {
+    try {
+        const quizId = parseInt(req.params.id);
+        if (isNaN(quizId)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid quiz ID'
+            });
+        }
+
+        // Check if quiz exists
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Quiz not found'
+            });
+        }
+
+        // Get all attempts for this quiz
+        const attempts = await QuizAttempt.findByQuizId(quizId);
+
+        res.status(200).json({
+            status: 'success',
+            data: attempts
+        });
+    } catch (error) {
+        console.error('Error fetching quiz results:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch quiz results'
+        });
+    }
+});
+
+// GET /api/attempts/:attemptId - Get details of a specific attempt (requires authentication)
+router.get('/attempts/:attemptId', requireAuth, async (req, res) => {
+    try {
+        const attemptId = parseInt(req.params.attemptId);
+        if (isNaN(attemptId)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid attempt ID'
+            });
+        }
+
+        // Get the attempt
+        const attempt = await QuizAttempt.findById(attemptId);
+        if (!attempt) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Attempt not found'
+            });
+        }
+
+        // Get quiz details for this attempt
+        const quiz = await Quiz.findById(attempt.quiz_id);
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                ...attempt,
+                quiz: quiz ? { id: quiz.id, title: quiz.title } : null
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching attempt details:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch attempt details'
+        });
+    }
 });
 
 module.exports = router;

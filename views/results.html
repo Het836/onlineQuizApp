@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Online Quiz System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="container">
+        <header>
+            <h1>Online Quiz System</h1>
+        </header>
+
+        <main id="main-content">
+            <!-- Navbar will be inserted here by JavaScript -->
+            <nav id="navbar"></nav>
+
+            <section class="results-page">
+                <div class="results-header">
+                    <h2>My Quiz Results</h2>
+                    <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+                </div>
+
+                <div id="results-content">
+                    <p class="loading-message">Loading your results...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="/js/main.js"></script>
+    <script>
+        // Check authentication and load results
+        async function checkAuthAndLoadResults() {
+            try {
+                const authResponse = await fetch('/api/auth/me');
+                if (!authResponse.ok) {
+                    throw new Error('Not authenticated');
+                }
+
+                const authData = await authResponse.json();
+                if (authData.status !== 'success') {
+                    throw new Error('Invalid auth response');
+                }
+
+                const userId = authData.data.id;
+
+                // Load navigation bar
+                loadNavbar(true, authData.data.role);
+
+                // Load user's results
+                await loadUserResults(userId);
+            } catch (error) {
+                // Not authenticated - redirect to login
+                console.warn('Not authenticated:', error.message);
+                window.location.href = '/login';
+            }
+        }
+
+        // Load navigation bar based on auth status
+        function loadNavbar(isAuthenticated, userRole = 'student') {
+            const navbar = document.getElementById('navbar');
+
+            if (isAuthenticated) {
+                // Authenticated user navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/dashboard" class="nav-link">Dashboard</a>
+                                <a href="/results" class="nav-link active">Results</a>
+                                <a href="#" id="logout-link" class="nav-link">Logout</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+
+                // Add logout event listener
+                const logoutLink = navbar.querySelector('#logout-link');
+                if (logoutLink) {
+                    logoutLink.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await logout();
+                    });
+                }
+            } else {
+                // Guest navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link active">Home</a>
+                                <a href="/login" class="nav-link">Login</a>
+                                <a href="/register" class="nav-link">Register</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+            }
+        }
+
+        // Handle logout
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Logout failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Even if logout fails on server, redirect to login
+                window.location.href = '/login';
+            }
+        }
+
+        // Load user's quiz results by checking each quiz
+        async function loadUserResults(userId) {
+            try {
+                // Get all quizzes first
+                const quizzesResponse = await fetch('/api/quizzes');
+                if (!quizzesResponse.ok) {
+                    throw new Error('Failed to load quizzes');
+                }
+
+                const quizzesData = await quizzesResponse.json();
+                if (quizzesData.status !== 'success' || !Array.isArray(quizzesData.data)) {
+                    throw new Error('Invalid quiz data format');
+                }
+
+                const quizzes = quizzesData.data;
+                const userResults = [];
+
+                // For each quiz, get its results and filter for current user
+                for (const quiz of quizzes) {
+                    try {
+                        const quizResultsResponse = await fetch(`/api/quizzes/${quiz.id}/results`);
+                        if (quizResultsResponse.ok) {
+                            const quizResultsData = await quizResultsResponse.json();
+                            if (quizResultsData.status === 'success' && Array.isArray(quizResultsData.data)) {
+                                // Filter results to only include current user's attempts
+                                const userAttempts = quizResultsData.data.filter(
+                                    attempt => attempt.user_id === userId
+                                );
+
+                                // Add quiz title to each attempt for display
+                                userAttempts.forEach(attempt => {
+                                    attempt.quiz_title = quiz.title;
+                                });
+
+                                userResults.push(...userAttempts);
+                            }
+                        }
+                        // If quiz results fail, just skip this quiz (might be no attempts yet)
+                    } catch (quizError) {
+                        console.warn(`Could not load results for quiz ${quiz.id}:`, quizError.message);
+                        // Continue with other quizzes
+                    }
+                }
+
+                // Display results
+                const container = document.getElementById('results-content');
+
+                if (userResults.length === 0) {
+                    container.innerHTML = `
+                        <div class="results-empty">
+                            <h3>No results yet</h3>
+                            <p>You haven't taken any quizzes yet. Go to the dashboard to start!</p>
+                            <a href="/dashboard" class="btn btn-primary">Start a Quiz</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort results by date (newest first)
+                userResults.sort((a, b) => {
+                    const dateA = new Date(a.submitted_at || a.started_at);
+                    const dateB = new Date(b.submitted_at || b.started_at);
+                    return dateB - dateA;
+                });
+
+                // Build results HTML
+                let resultsHTML = `
+                    <div class="results-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Quiz</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                userResults.forEach(result => {
+                    // Format date
+                    const date = new Date(result.submitted_at || result.started_at);
+                    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    // Calculate percentage if not directly available
+                    const percentage = result.percentage !== undefined ? result.percentage :
+                                      (result.score && result.total_questions ?
+                                       Math.round((result.score / result.total_questions) * 100) : 0);
+
+                    resultsHTML += `
+                        <tr>
+                            <td>${result.quiz_title || 'Unknown Quiz'}</td>
+                            <td>
+                                <span class="result-score ${percentage >= 60 ? 'passing' : 'failing'}">
+                                    ${result.score || '?'}/${result.total_questions || '?'} (${percentage}%)
+                                </span>
+                            </td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <a href="/results/${result.id}" class="btn btn-sm btn-outline">View Details</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                resultsHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                container.innerHTML = resultsHTML;
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('results-content').innerHTML =
+                    `<div class="error-message">Error loading results: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', checkAuthAndLoadResults);
+    </script>
+</body>
+</html>

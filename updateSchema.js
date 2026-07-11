@@ -39,12 +39,38 @@ async function updateSchema() {
       { name: 'created_at', definition: 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP' }
     ];
 
+    // List of columns to add to users table
+    const usersColumnsToAdd = [
+      { name: 'updated_at', definition: 'TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP' }
+    ];
+
     for (const col of columnsToAdd) {
       if (!columnMap[col.name]) {
         console.log(`Adding column ${col.name}...`);
         await promisePool.query(`ALTER TABLE quiz_attempts ADD COLUMN ${col.name} ${col.definition}`);
       } else {
         console.log(`Column ${col.name} already exists.`);
+      }
+    }
+
+    // Check and add columns to users table
+    const [userColumns] = await promisePool.query(`
+      SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'users'
+    `);
+    const userColumnMap = {};
+    userColumns.forEach(col => {
+      userColumnMap[col.COLUMN_NAME] = col;
+    });
+
+    for (const col of usersColumnsToAdd) {
+      if (!userColumnMap[col.name]) {
+        console.log(`Adding column ${col.name} to users table...`);
+        await promisePool.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.definition}`);
+      } else {
+        console.log(`Column ${col.name} already exists in users table.`);
       }
     }
 

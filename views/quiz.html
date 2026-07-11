@@ -7,14 +7,18 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="container">
         <header>
             <h1>Online Quiz System</h1>
         </header>
 
-        <main>
+        <main id="main-content">
+            <!-- Navbar will be inserted here by JavaScript -->
+            <nav id="navbar"></nav>
+
             <div class="quiz-container">
-                <a href="/" class="btn-back">← Back to Home</a>
+                <a href="/" class="btn-back" id="btn-back-home">← Back to Home</a>
 
                 <div id="quiz-container">
                     <!-- Quiz content will be loaded here -->
@@ -27,5 +31,101 @@
         </footer>
     </div>
     <script src="/js/quiz.js"></script>
+    <script>
+        // Check authentication and update UI accordingly
+        async function checkAuthAndInit() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        // User is authenticated
+                        await loadNavbar(true, data.data.role);
+                        // Update back button to go to dashboard
+                        document.getElementById('btn-back-home').href = '/dashboard';
+                        document.getElementById('btn-back-home').textContent = '← Back to Dashboard';
+                        return;
+                    }
+                }
+                // If we get here, user is not authenticated
+                await loadNavbar(false);
+                document.getElementById('btn-back-home').href = '/';
+                document.getElementById('btn-back-home').textContent = '← Back to Home';
+            } catch (error) {
+                // Not authenticated - show guest nav
+                await loadNavbar(false);
+                document.getElementById('btn-back-home').href = '/';
+                document.getElementById('btn-back-home').textContent = '← Back to Home';
+                console.warn('Auth check failed:', error.message);
+            }
+        }
+
+        // Load navigation bar based on auth status
+        async function loadNavbar(isAuthenticated, userRole = 'student') {
+            const navbar = document.getElementById('navbar');
+
+            if (isAuthenticated) {
+                // Authenticated user navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/dashboard" class="nav-link">Dashboard</a>
+                                <a href="/results" class="nav-link">Results</a>
+                                <a href="#" id="logout-link" class="nav-link">Logout</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+
+                // Add logout event listener
+                const logoutLink = navbar.querySelector('#logout-link');
+                if (logoutLink) {
+                    logoutLink.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await logout();
+                    });
+                }
+            } else {
+                // Guest navbar
+                navbar.innerHTML = `
+                    <nav class="navbar">
+                        <div class="container">
+                            <a href="/" class="nav-logo">Online Quiz System</a>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link active">Home</a>
+                                <a href="/login" class="nav-link">Login</a>
+                                <a href="/register" class="nav-link">Register</a>
+                            </div>
+                        </div>
+                    </nav>
+                `;
+            }
+        }
+
+        // Handle logout
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Logout failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Even if logout fails on server, redirect to login
+                window.location.href = '/login';
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', checkAuthAndInit);
+    </script>
 </body>
 </html>

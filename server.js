@@ -1,6 +1,8 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '.env') });
@@ -11,6 +13,18 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Session configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // HTTPS in production
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -32,6 +46,10 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+// Auth routes
+const authRouter = require('./routes/api/auth');
+app.use('/api/auth', authRouter);
 
 // 404 handler
 app.use((req, res) => {

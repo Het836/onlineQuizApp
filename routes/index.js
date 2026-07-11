@@ -12,6 +12,15 @@ router.get('/about', homeController.about);
 // Contact page route
 router.get('/contact', homeController.contact);
 
+// Authentication routes
+router.get('/login', homeController.login);
+router.get('/register', homeController.register);
+
+// Dashboard and results routes
+router.get('/dashboard', homeController.dashboard);
+router.get('/results', homeController.results);
+router.get('/results/:id', homeController.resultDetails);
+
 // Quiz page route
 router.get('/quiz.html', homeController.quiz);
 
