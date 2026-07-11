@@ -9,152 +9,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <!-- <a href="#main-content" class="skip-link">Skip to main content</a> -->
+<body class="quiz-page">
+    <div id="navbar" data-nav="guest" data-active=""></div>
 
-    <div class="container">
-        <header>
-            <h1>Online Quiz System</h1>
-        </header>
-
-        <main id="main-content">
-            <!-- Navbar will be inserted here by JavaScript -->
-            <nav id="navbar"></nav>
-
-            <div class="quiz-container">
-                <a href="/" class="btn-back" id="btn-back-home">← Back to Home</a>
-
-                <div id="questions-container">
-                    <!-- Quiz content will be loaded here -->
-                </div>
+    <main id="main-content" class="container page">
+        <div class="quiz-wrapper">
+            <a href="/" class="btn-back" id="btn-back-home">← Back to Home</a>
+            <div id="questions-container">
+                <!-- Quiz content will be loaded here -->
             </div>
-        </main>
+        </div>
+    </main>
 
-        <footer>
-            <div class="container">
-                <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
-            </div>
-        </footer>
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
 
+    <script src="/js/components/navbar.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/quiz.js"></script>
     <script>
-        // Check authentication and update UI accordingly
-        async function checkAuthAndInit() {
+        // Set navbar based on auth status and update back button
+        document.addEventListener('DOMContentLoaded', async () => {
+            const navbar = document.getElementById('navbar');
+            const backButton = document.getElementById('btn-back-home');
+
             try {
                 const response = await fetch('/api/auth/me');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.status === 'success') {
                         // User is authenticated
-                        await loadNavbar(true, data.data.role);
+                        navbar.dataset.nav = 'auth';
+                        navbar.dataset.active = ''; // no active tab for quiz page
                         // Update back button to go to dashboard
-                        document.getElementById('btn-back-home').href = '/dashboard';
-                        document.getElementById('btn-back-home').textContent = '← Back to Dashboard';
+                        backButton.href = '/dashboard';
+                        backButton.textContent = '← Back to Dashboard';
                         return;
                     }
                 }
                 // If we get here, user is not authenticated
-                await loadNavbar(false);
-                document.getElementById('btn-back-home').href = '/';
-                document.getElementById('btn-back-home').textContent = '← Back to Home';
+                navbar.dataset.nav = 'guest';
+                navbar.dataset.active = '';
+                backButton.href = '/';
+                backButton.textContent = '← Back to Home';
             } catch (error) {
                 // Not authenticated - show guest nav
-                await loadNavbar(false);
-                document.getElementById('btn-back-home').href = '/';
-                document.getElementById('btn-back-home').textContent = '← Back to Home';
+                navbar.dataset.nav = 'guest';
+                navbar.dataset.active = '';
+                backButton.href = '/';
+                backButton.textContent = '← Back to Home';
                 console.warn('Auth check failed:', error.message);
             }
-        }
-
-        // Load navigation bar based on auth status
-        async function loadNavbar(isAuthenticated, userRole = 'student') {
-            const navbar = document.getElementById('navbar');
-
-            if (isAuthenticated) {
-                // Authenticated user navbar
-                navbar.innerHTML = `
-                    <nav class="navbar">
-                        <div class="container">
-                            <div class="logo">Online Quiz System</div>
-                            <ul class="nav-links">
-                                <li><a href="/dashboard" class="active">Dashboard</a></li>
-                                <li><a href="/results">Results</a></li>
-                                <li><a href="/profile">Profile</a></li>
-                                <li><a href="#" id="logout-link">Logout</a></li>
-                            </ul>
-                            <button class="menu-toggle" aria-label="Toggle menu">
-                                <span></span><span></span><span></span>
-                            </button>
-                        </div>
-                    </nav>
-                `;
-
-                // Add logout event listener
-                const logoutLink = navbar.querySelector('#logout-link');
-                if (logoutLink) {
-                    logoutLink.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        await logout();
-                    });
-                }
-
-                // Add mobile menu toggle
-                const menuToggle = navbar.querySelector('.menu-toggle');
-                const navLinks = navbar.querySelector('.nav-links');
-                if (menuToggle && navLinks) {
-                    menuToggle.addEventListener('click', () => {
-                        navLinks.classList.toggle('open');
-                    });
-                }
-            } else {
-                // Guest navbar
-                navbar.innerHTML = `
-                    <nav class="navbar">
-                        <div class="container">
-                            <div class="logo">Online Quiz System</div>
-                            <ul class="nav-links">
-                                <li><a href="/">Home</a></li>
-                                <li><a href="/login">Login</a></li>
-                                <li><a href="/register">Register</a></li>
-                            </ul>
-                            <button class="menu-toggle" aria-label="Toggle menu">
-                                <span></span><span></span><span></span>
-                            </button>
-                        </div>
-                    </nav>
-                `;
-
-                // Add mobile menu toggle for guest
-                const menuToggle = navbar.querySelector('.menu-toggle');
-                const navLinks = navbar.querySelector('.nav-links');
-                if (menuToggle && navLinks) {
-                    menuToggle.addEventListener('click', () => {
-                        navLinks.classList.toggle('open');
-                    });
-                }
-            }
-        }
-
-        // Handle logout
-        async function logout() {
-            try {
-                const response = await fetch('/api/auth/logout', { method: 'POST' });
-                if (response.ok) {
-                    window.location.href = '/';
-                } else {
-                    const data = await response.json();
-                    throw new Error(data.message || 'Logout failed');
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                // Even if logout fails on server, redirect to login
-                window.location.href = '/login';
-            }
-        }
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', checkAuthAndInit);
+        });
     </script>
 </body>
 </html>
