@@ -131,7 +131,7 @@ router.put('/:id', async (req, res) => {
     // Check if quiz exists
     const existingQuiz = await Quiz.findById(quizId);
     if (!existingQuiz) {
-      return res.status(404).json({
+      return res.status(500).json({
         status: 'error',
         message: 'Quiz not found'
       });
@@ -202,6 +202,7 @@ router.delete('/:id', async (req, res) => {
 
 // POST /api/quizzes/:id/submit - Submit a quiz attempt
 router.post('/:id/submit', requireAuth, async (req, res) => {
+  console.log("🔥 SUBMIT ROUTE HIT");
   try {
     const quizId = parseInt(req.params.id);
     if (isNaN(quizId)) {
@@ -349,10 +350,12 @@ router.post('/:id/submit', requireAuth, async (req, res) => {
       wrong_answers: wrongAnswers,
       score: score,
       percentage: percentage,
+      answers,
       started_at: new Date(),
       submitted_at: new Date()
     };
     const attempt = await QuizAttempt.create(attemptData);
+    console.log("attemptData =", attemptData);
     res.status(200).json({
       status: "success",
       data: {
@@ -378,36 +381,36 @@ router.post('/:id/submit', requireAuth, async (req, res) => {
 // GET /api/quizzes/:id/results - Get all attempts for a quiz (requires authentication)
 router.get('/:id/results', requireAuth, async (req, res) => {
     try {
-        const quizId = parseInt(req.params.id);
-        if (isNaN(quizId)) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Invalid quiz ID'
-            });
-        }
-
-        // Check if quiz exists
-        const quiz = await Quiz.findById(quizId);
-        if (!quiz) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Quiz not found'
-            });
-        }
-
-        // Get all attempts for this quiz
-        const attempts = await QuizAttempt.findByQuizId(quizId);
-
-        res.status(200).json({
-            status: 'success',
-            data: attempts
+      const quizId = parseInt(req.params.id);
+      if (isNaN(quizId)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid quiz ID'
         });
+      }
+
+      // Check if quiz exists
+      const quiz = await Quiz.findById(quizId);
+      if (!quiz) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Quiz not found'
+        });
+      }
+
+      // Get all attempts for this quiz
+      const attempts = await QuizAttempt.findByQuizId(quizId);
+
+      res.status(200).json({
+        status: 'success',
+        data: attempts
+      });
     } catch (error) {
-        console.error('Error fetching quiz results:', error);
-        res.status(500).json({
-            status: 'error',
-            message: 'Failed to fetch quiz results'
-        });
+      console.error('Error fetching quiz results:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to fetch quiz results'
+      });
     }
 });
 
@@ -422,8 +425,8 @@ router.get('/attempts/:attemptId', requireAuth, async (req, res) => {
             });
         }
 
-        // Get the attempt
-        const attempt = await QuizAttempt.findById(attemptId);
+        // Get the attempt with answers
+        const attempt = await QuizAttempt.findByIdWithAnswers(attemptId);
         if (!attempt) {
             return res.status(404).json({
                 status: 'error',
@@ -444,8 +447,8 @@ router.get('/attempts/:attemptId', requireAuth, async (req, res) => {
     } catch (error) {
         console.error('Error fetching attempt details:', error);
         res.status(500).json({
-            status: 'error',
-            message: 'Failed to fetch attempt details'
+          status: 'error',
+          message: 'Failed to fetch attempt details'
         });
     }
 });

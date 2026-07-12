@@ -225,20 +225,26 @@ function showResult(result) {
                 <p>Review your answers below. Correct answers are marked in green, incorrect in red.</p>
             </div>
             <ol class="question-results">
-                ${result.results.map((questionResult, index) => {
-                    const question = currentQuizData.questions[index];
+                ${result.results.map((questionResult) => {
+                    // Find the question by question_id
+                    const question = currentQuizData.questions.find(q => q.id === questionResult.question_id);
+                    if (!question) {
+                        // If question not found, return a placeholder to avoid breaking
+                        return `<li class="question-result error">Question not found for ID ${questionResult.question_id}</li>`;
+                    }
+                    const questionIndex = currentQuizData.questions.indexOf(question);
                     const isCorrect = questionResult.correct;
                     const selectedOptionId = questionResult.selected_option;
                     const correctOptionId = questionResult.correct_option;
 
-                    // Find the selected option text and correct option text
+                    // Find the selected option and correct option by id
                     const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
                     const correctOption = question.options.find(opt => opt.id === correctOptionId);
 
                     return `
                         <li class="question-result ${isCorrect ? 'correct' : 'incorrect'}">
                             <div class="question-header">
-                                <span class="question-number">Question ${index + 1}:</span>
+                                <span class="question-number">Question ${questionIndex + 1}:</span>
                                 <span class="question-text">${question.question_text}</span>
                             </div>
                             <div class="question-meta">
@@ -265,12 +271,12 @@ function showResult(result) {
                                     }
 
                                     return `<label class="option-label ${className}" title="${title}">
-                                                <input type="radio" name="question_result_${index}" value="${option.id}" disabled>
+                                                <input type="radio" name="question_result_${questionResult.question_id}" value="${option.id}" disabled>
                                                 <span class="option-text">${option.option_text}</span>
                                             </label>`;
                                 }).join('')}
                             </div>
-                            ${!selectedOptionId ? `<p class="correct-answer-text">Correct answer: ${correctOption.option_text}</p>` : ''}
+                            ${!selectedOptionId && correctOption ? `<p class="correct-answer-text">Correct answer: ${correctOption.option_text}</p>` : !selectedOptionId && !correctOption ? `<p class="correct-answer-text">Correct answer unavailable</p>` : ''}
                         </li>
                     `;
                 }).join('')}

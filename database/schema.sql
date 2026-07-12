@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS options;
 DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS quizzes;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS attempt_answers;
 
 -- Create users table
 CREATE TABLE users (
@@ -61,6 +62,19 @@ CREATE TABLE quiz_attempts (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
 
+-- Create attempt_answers table
+CREATE TABLE attempt_answers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    attempt_id INT NOT NULL,
+    question_id INT NOT NULL,
+    selected_option_id INT NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (selected_option_id) REFERENCES options(id) ON DELETE CASCADE
+);
+
 -- Indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_quizzes_is_active ON quizzes(is_active);
@@ -69,3 +83,8 @@ CREATE INDEX idx_options_question_id ON options(question_id);
 CREATE INDEX idx_quiz_attempts_user_id ON quiz_attempts(user_id);
 CREATE INDEX idx_quiz_attempts_quiz_id ON quiz_attempts(quiz_id);
 CREATE INDEX idx_quiz_attempts_created_at ON quiz_attempts(started_at);
+
+-- Indexes for attempt_answers
+CREATE INDEX idx_attempt_answers_attempt_id ON attempt_answers(attempt_id);
+CREATE INDEX idx_attempt_answers_question_id ON attempt_answers(question_id);
+CREATE INDEX idx_attempt_answers_selected_option_id ON attempt_answers(selected_option_id);
