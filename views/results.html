@@ -67,7 +67,6 @@
         function loadNavbar(isAuthenticated, userRole = 'student') {
             const navbar = document.getElementById('navbar');
             const activePage = navbar.dataset.active || '';
-
             if (isAuthenticated) {
                 // Authenticated user navbar
                 navbar.innerHTML = `
@@ -296,7 +295,8 @@
                     </table>
                 `;
 
-                container.innerHTML = resultsHTML;
+                // Wrap table in a responsive container to enable horizontal scrolling on small screens
+                container.innerHTML = `<div class="table-responsive">${resultsHTML}</div>`;
             } catch (error) {
                 console.error('Error loading results:', error);
                 document.getElementById('results-content').innerHTML =
