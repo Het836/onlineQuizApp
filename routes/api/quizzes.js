@@ -90,11 +90,12 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const newQuiz = await Quiz.create(quizData);
+    // Create quiz
+    const quiz = await Quiz.create(quizData);
     res.status(201).json({
       status: 'success',
       message: 'Quiz created successfully',
-      data: newQuiz
+      data: quiz
     });
   } catch (error) {
     console.error('Error creating quiz:', error);
@@ -131,15 +132,16 @@ router.put('/:id', async (req, res) => {
     // Check if quiz exists
     const existingQuiz = await Quiz.findById(quizId);
     if (!existingQuiz) {
-      return res.status(500).json({
+      return res.status(400).json({
         status: 'error',
         message: 'Quiz not found'
       });
     }
 
+    // Update quiz
     const updatedQuiz = await Quiz.update(quizId, quizData);
     if (!updatedQuiz) {
-      return res.status(500).json({
+      return res.status(400).json({
         status: 'error',
         message: 'Failed to update quiz'
       });
@@ -173,7 +175,7 @@ router.delete('/:id', async (req, res) => {
     // Check if quiz exists
     const existingQuiz = await Quiz.findById(quizId);
     if (!existingQuiz) {
-      return res.status(404).json({
+      return res.status(400).json({
         status: 'error',
         message: 'Quiz not found'
       });
@@ -181,7 +183,7 @@ router.delete('/:id', async (req, res) => {
 
     const deleted = await Quiz.delete(quizId);
     if (!deleted) {
-      return res.status(500).json({
+      return res.status(400).json({
         status: 'error',
         message: 'Failed to delete quiz'
       });
@@ -436,12 +438,42 @@ router.get('/attempts/:attemptId', requireAuth, async (req, res) => {
 
         // Get quiz details for this attempt
         const quiz = await Quiz.findById(attempt.quiz_id);
+        if (!quiz) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Quiz not found for this attempt'
+            });
+        }
+
+        // Get all questions for this quiz
+        const questions = await Question.findByQuizId(quiz.id);
+        // For each question, get its options and the answer from the attempt
+        const questionsWithDetails = await Promise.all(questions.map(async (question) => {
+            const options = await Option.findByQuestionId(question.id);
+            // Find the answer for this question from the attempt
+            const answer = attempt.answers.find(ans => ans.question_id === question.id);
+            const selectedOptionId = answer ? answer.selected_option_id : null;
+            const isCorrect = answer ? answer.is_correct === 1 : false;
+
+            return {
+                question_id: question.id,
+                question_text: question.question_text,
+                options: options.map(opt => ({
+                    id: opt.id,
+                    option_text: opt.option_text,
+                    is_correct: opt.is_correct === 1
+                })),
+                selected_option_id: selectedOptionId,
+                is_correct: isCorrect
+            };
+        }));
 
         res.status(200).json({
             status: 'success',
             data: {
                 ...attempt,
-                quiz: quiz ? { id: quiz.id, title: quiz.title } : null
+                quiz: { id: quiz.id, title: quiz.title },
+                questions: questionsWithDetails   // New field with detailed question data
             }
         });
     } catch (error) {

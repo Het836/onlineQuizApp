@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <div id="navbar" data-nav="auth" data-active="results"></div>
@@ -42,25 +42,25 @@
                 }
 
                 const data = await response.json();
-                if (data.status === 'success') {
-                    // Load navigation bar
-                    loadNavbar(true, data.data.role);
-
-                    // Get result ID from URL path (/results/:id)
-                    const pathParts = window.location.pathname.split('/');
-                    const resultId = pathParts[pathParts.length - 1];
-
-                    // Validate that it's a numeric ID
-                    if (!resultId || isNaN(resultId) || resultId === 'results') {
-                        window.location.href = '/results';
-                        return;
-                    }
-
-                    // Load result details
-                    loadResultDetails(resultId);
-                } else {
+                if (data.status !== 'success') {
                     throw new Error('Invalid response');
                 }
+
+                // Load navigation bar
+                loadNavbar(true, data.data.role);
+
+                // Get result ID from URL path (/results/:id)
+                const pathParts = window.location.pathname.split('/');
+                const resultId = pathParts[pathParts.length - 1];
+
+                // Validate that it's a numeric ID
+                if (!resultId || isNaN(resultId) || resultId === 'results') {
+                    window.location.href = '/results';
+                    return;
+                }
+
+                // Load result details
+                await loadResultDetails(resultId);
             } catch (error) {
                 // Not authenticated - redirect to login
                 console.warn('Not authenticated:', error.message);
@@ -100,12 +100,9 @@
                 navbar.innerHTML = `
                     <nav class="navbar">
                         <div class="container">
-                            <a href="/" class="nav-logo">Online Quiz System</a>
-                            <div class="nav-links">
-                                <a href="/" class="nav-link active">Home</a>
-                                <a href="/login" class="nav-link">Login</a>
-                                <a href="/register" class="nav-link">Register</a>
-                            </div>
+                            <a href="/" class="nav-link active">Home</a>
+                            <a href="/login" class="nav-link">Login</a>
+                            <a href="/register" class="nav-link">Register</a>
                         </div>
                     </nav>
                 `;
@@ -135,89 +132,153 @@
         // Load result details by ID
         async function loadResultDetails(resultId) {
             try {
-                const response = await fetch(`/api/results/${resultId}`);
-                if (!response.ok) {
-                    if (response.status === 404) {
+                // Fetch attempt data
+                const attemptResponse = await fetch(`/api/attempts/${resultId}`);
+                if (!attemptResponse.ok) {
+                    if (attemptResponse.status === 404) {
                         window.location.href = '/results';
                         return;
                     }
-                    throw new Error('Failed to load result details');
+                    throw new Error('Failed to load attempt details');
                 }
 
-                const data = await response.json();
-                const container = document.getElementById('result-detail-content');
+                const attemptData = await attemptResponse.json();
+                if (attemptData.status !== 'success' || !attemptData.data) {
+                    throw new Error('Invalid attempt data');
+                }
+                const attempt = attemptData.data;
 
-                if (data.status === 'success' && data.data) {
-                    const attempt = data.data;
+                // Add styling class to container
+                const resultContainer = document.querySelector('section.result-container');
+                if (resultContainer) {
+                    resultContainer.classList.add('result-details-page');
+                }
 
-                    // Get quiz title from the attempt object (might be in different places)
-                    const quizTitle = attempt.quiz_title ||
-                                     (attempt.quiz && attempt.quiz.title) ||
-                                     'Unknown Quiz';
+                // Fetch quiz details for questions and options
+                const quizResponse = await fetch(`/api/quizzes/${attempt.quiz_id}`);
+                if (!quizResponse.ok) {
+                    throw new Error('Failed to load quiz details');
+                }
+                const quizData = await quizResponse.json();
+                if (quizData.status !== 'success' || !quizData.data) {
+                    throw new Error('Invalid quiz data');
+                }
+                const quiz = quizData.data;
 
-                    // Format date - try submitted_at first, then started_at, then created_at
-                    const dateString = attempt.submitted_at ||
-                                      attempt.started_at ||
-                                      attempt.created_at;
-                    const date = new Date(dateString);
-                    const formattedDate = date.toLocaleDateString() + ' ' +
-                                        date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                // Determine date to display
+                const dateString = attempt.submitted_at || attempt.started_at || attempt.created_at;
+                const date = new Date(dateString);
+                const formattedDate = date.toLocaleDateString() + ' ' +
+                                    date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-                    // Determine if passed (assuming 60% is passing)
-                    // Calculate percentage if not directly available
-                    let percentage = attempt.percentage;
-                    if (percentage === undefined && attempt.score !== undefined && attempt.total_questions !== undefined) {
-                        percentage = Math.round((attempt.score / attempt.total_questions) * 100);
-                    } else if (percentage === undefined) {
-                        percentage = 0; // fallback
-                    }
+                // Determine pass/fail (assuming 60% passing)
+                let percentage = attempt.percentage;
+                if (percentage === undefined && attempt.score !== undefined && attempt.total_questions !== undefined) {
+                    percentage = Math.round((attempt.score / attempt.total_questions) * 100);
+                } else if (percentage === undefined) {
+                    percentage = 0;
+                }
+                const passed = percentage >= 60;
 
-                    const passed = percentage >= 60;
-
-                    let detailsHTML = `
-                        <div class="result-summary">
-                            <div class="result-score-badge ${passed ? 'passed' : 'failed'}">
-                                <span class="badge-score">${percentage}%</span>
-                                <span class="badge-label">${passed ? 'PASSED' : 'FAILED'}</span>
-                            </div>
-                            <div class="result-info">
-                                <h3>${quizTitle}</h3>
-                                <p><strong>Score:</strong> ${attempt.score || '?'} out of ${attempt.total_questions || '?'}</p>
-                                <p><strong>Percentage:</strong> ${percentage}%</p>
-                                <p><strong>Completed:</strong> ${formattedDate}</p>
-                            </div>
+                // Build HTML
+                let detailsHTML = `
+                    <div class="result-summary">
+                        <div class="result-score-badge ${passed ? 'passed' : 'failed'}">
+                            <span class="badge-score">${percentage}%</span>
+                            <span class="badge-label">${passed ? 'PASSED' : 'FAILED'}</span>
                         </div>
+                        <div class="result-info">
+                            <h3>${quiz.title}</h3>
+                            <p><strong>Score:</strong> ${attempt.score || '?'} out of ${attempt.total_questions || '?'}</p>
+                            <p><strong>Percentage:</strong> ${percentage}%</p>
+                            <p><strong>Completed:</strong> ${formattedDate}</p>
+                        </div>
+                    </div>
+                `;
+
+                // Add question review if we have answers
+                if (attempt.answers && Array.isArray(attempt.answers) && attempt.answers.length > 0) {
+                    detailsHTML += `
+                        <div class="question-breakdown">
+                            <h3>Question Review</h3>
+                            <ol class="question-list">
                     `;
 
-                    // Add question-by-question breakdown if available
-                    if (attempt.answers && Array.isArray(attempt.answers) && attempt.answers.length > 0) {
-                        // We would need the questions and options to show detailed breakdown
-                        // Since we don't have that from this endpoint alone, we'll show a simplified view
+                    attempt.answers.forEach(answer => {
+                        // Find the question by id
+                        const question = quiz.questions.find(q => q.id === answer.question_id);
+                        if (!question) {
+                            // If question not found, show a placeholder
+                            detailsHTML += `
+                                <li class="question-item">
+                                    <div class="question-header">
+                                        <span class="question-number">Question ${answer.question_id}:</span>
+                                        <span class="question-text">Question not found</span>
+                                    </div>
+                                </li>
+                            `;
+                            return;
+                        }
+
+                        // Find selected option object (if any)
+                        const selectedOption = answer.selected_option_id !== null ?
+                            question.options.find(opt => opt.id === answer.selected_option_id) : null;
+                        // Find correct option object
+                        const correctOption = question.options.find(opt => opt.is_correct === 1);
+                        const isCorrect = answer.is_correct === 1;
+
                         detailsHTML += `
-                            <div class="question-breakdown">
-                                <h3>Answer Summary</h3>
-                                <p>Detailed question-by-question review is not available in this view.</p>
-                                <p>Your answers have been recorded and can be reviewed by your instructor if applicable.</p>
-                            </div>
-                        ";
-                    } else if (attempt.answers) {
+                            <li class="question-item">
+                                <div class="question-header">
+                                    <span class="question-number">Question ${question.id}:</span>
+                                    <span class="question-text">${question.question_text}</span>
+                                </div>
+                                <div class="options-list">
+                        `;
+
+                        question.options.forEach(option => {
+                            let className = '';
+                            if (option.id === correctOption.id) {
+                                className += ' correct-option';
+                            }
+                            if (selectedOption && option.id === selectedOption.id) {
+                                className += ' selected-option';
+                                if (!isCorrect) {
+                                    className += ' wrong-selection';
+                                }
+                            }
+
+                            detailsHTML += `
+                                <label class="option-label ${className.trim()}">
+                                    <input type="radio" name="question_${question.id}" value="${option.id}" ${selectedOption && option.id === selectedOption.id ? 'checked' : ''} disabled>
+                                    <span class="option-text">${option.option_text}</span>
+                                </label>
+                            `;
+                        });
+
                         detailsHTML += `
-                            <div class="note">
-                                <p>Answer details are not available for this attempt.</p>
-                            </div>
-                        ";
-                    }
+                                </div>
+                                ${selectedOption === null ? `<p class="note">Not answered</p>` : ''}
+                                ${!isCorrect && correctOption ? `<p class="correct-answer">Correct answer: ${correctOption.option_text}</p>` : ''}
+                            </li>
+                        `;
+                    });
 
                     detailsHTML += `
-                        <div class="result-actions">
-                            <a href="/results" class="btn btn-outline">Back to Results</a>
+                            </ol>
                         </div>
                     `;
-
-                    container.innerHTML = detailsHTML;
-                } else {
-                    throw new Error('Invalid result data');
                 }
+
+                // Add actions
+                detailsHTML += `
+                    <div class="result-actions">
+                        <a href="/results" class="btn btn-outline">Back to Results</a>
+                    </div>
+                `;
+
+                // Update the content
+                document.getElementById('result-detail-content').innerHTML = detailsHTML;
             } catch (error) {
                 console.error('Error loading result details:', error);
                 document.getElementById('result-detail-content').innerHTML =
@@ -228,91 +289,5 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', checkAuthAndLoadResultDetails);
     </script>
-    <style>
-        /* Custom styles for the result details page */
-        .result-details-page .result-container {
-            max-width: var(--form-max-width);
-            margin: 0 auto;
-            padding: var(--space-6) 0;
-        }
-
-        .result-details-page .result-summary {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-            padding: var(--space-6);
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-6);
-            align-items: center;
-        }
-
-        .result-details-page .result-score-badge {
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: var(--space-4) var(--space-6);
-            border-radius: var(--radius);
-            text-align: center;
-            min-width: 120px;
-        }
-
-        .result-details-page .result-score-badge .badge-score {
-            font-size: 2.25rem;
-            font-weight: 700;
-            display: block;
-        }
-
-        .result-details-page .result-score-badge .badge-label {
-            font-size: 1.125rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .result-details-page .result-score-badge.passed {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .result-details-page .result-score-badge.failed {
-            background: var(--danger-light);
-            color: var(--danger);
-        }
-
-        .result-details-page .result-info {
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .result-details-page .result-info h3 {
-            margin-top: 0;
-            margin-bottom: var(--space-4);
-        }
-
-        .result-details-page .result-info p {
-            margin: var(--space-2) 0;
-        }
-
-        .result-details-page .result-header .btn-outline {
-            margin-top: var(--space-4);
-        }
-
-        .result-details-page #result-detail-content .loading-message {
-            text-align: center;
-            padding: var(--space-8);
-        }
-
-        /* Responsive adjustments for result details */
-        @media (max-width: 480px) {
-            .result-details-page .result-summary {
-                flex-direction: column;
-                text-align: center;
-            }
-            .result-details-page .result-score-badge {
-                margin-bottom: var(--space-4);
-            }
-        }
-    </style>
 </body>
 </html>
