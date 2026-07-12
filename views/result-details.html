@@ -4,406 +4,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Quiz Result Details</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        @media (max-width: 768px) {
+            .hide-on-mobile {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 
-
 <body>
+    <!-- Navbar will be injected by JavaScript -->
+    <div id="navbar" data-nav="auth" data-active="results"></div>
 
+    <main id="main-content" class="container page">
+        <section class="result-details">
 
-<div class="container">
+            <section class="result-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Quiz Result Details</h2>
 
-<header>
-    <h1>Online Quiz System</h1>
-</header>
+                <a href="/results" class="btn btn-outline hide-on-mobile">
+                    ← Back
+                </a>
+            </section>
 
+            <section id="result-detail-content">
 
-<nav id="navbar"></nav>
+                <p class="loading-message">Loading result details...</p>
 
+            </section>
 
+        </section>
+    </main>
 
-<main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
 
-<section class="result-details">
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        async function loadResultDetails() {
 
-<div class="result-header">
+            const container = document.getElementById("result-detail-content");
 
-<h2>Quiz Result Details</h2>
 
-<a href="/results" class="btn btn-outline">
-Back to Results
-</a>
+            try {
+                // get id from URL
 
-</div>
+                const parts = window.location.pathname.split("/");
 
 
-<div id="result-detail-content">
+                const attemptId = parts[parts.length - 1];
 
-<p>
-Loading result details...
-</p>
 
-</div>
+                if (!attemptId || isNaN(attemptId)) {
+                    window.location.href = "/results";
+                    return;
+                }
 
 
-</section>
+                const response = await fetch(`/api/quizzes/attempts/${attemptId}`);
 
-</main>
 
+                const data = await response.json();
 
-<footer>
 
-<p>
-© 2026 Online Quiz System
-</p>
+                console.log("RESULT DATA:", data);
 
-</footer>
 
+                if (data.status !== "success") {
+                    throw new Error(data.message);
+                }
 
-</div>
 
+                const attemptData = data.data;
 
 
+                let percentage = attemptData.percentage ?? Math.round(
+                    (attemptData.correct_answers / attemptData.total_questions) * 100
+                );
 
-<script>
 
+                let html = `
 
-async function loadResultDetails(){
+                    <!-- Result Summary Card -->
+                    <div class="card" style="padding: 1rem;">
+                        <h2>${attemptData.quiz?.title || "Quiz Result"}</h2>
 
+                        <div class="score-box">
+                            <h1>${percentage}%</h1>
 
-const container =
-document.getElementById("result-detail-content");
+                            <p class="${percentage >= 60 ? 'text-success' : 'text-danger'}">
+                                ${percentage >= 60 ? "PASSED" : "FAILED"}
+                            </p>
+                        </div>
 
+                        <div class="stats" style="padding: 1rem;">
+                            <p><b>Total Questions:</b> ${attemptData.total_questions}</p>
 
+                            <p><b>Correct:</b> ${attemptData.correct_answers}</p>
 
-try{
+                            <p><b>Wrong:</b> ${attemptData.wrong_answers}</p>
 
+                            <p><b>Score:</b> ${attemptData.score}</p>
+                        </div>
+                    </div>
 
-// get id from URL
+                    <!-- Status Badge -->
+                    <div class="status-badge ${percentage >= 60 ? 'badge-success' : 'badge-danger'}" style="display: inline-block; margin: 1.5rem 0;">
+                        ${percentage >= 60 ? "Passed" : "Failed"}
+                    </div>
 
-const parts =
-window.location.pathname.split("/");
+                    <h2 style="margin-bottom: 1rem;">Answer Review</h2>
 
+                    <div class="answer-review">
+                `;
 
-const attemptId =
-parts[parts.length-1];
 
+                // show answers
 
+                if (attemptData.questions && attemptData.questions.length) {
 
-if(!attemptId || isNaN(attemptId))
-{
-window.location.href="/results";
-return;
-}
+                    attemptData.questions.forEach((question, index) => {
 
+                        const isCorrect = question.is_correct;
+                        const selectedOptionId = question.selected_option_id;
 
+                        const selectedOption = question.options.find(o => o.id === selectedOptionId);
+                        const selectedOptionText = selectedOption ? selectedOption.option_text : 'Not answered';
 
+                        const correctOption = question.options.find(o => o.is_correct === true);
+                        const correctOptionText = correctOption ? correctOption.option_text : '';
 
-const response =
-await fetch(`/api/quizzes/attempts/${attemptId}`);
+                        let borderColor, bgColor, badgeClass, badgeText, showCorrectAnswer;
+                        if (isCorrect) {
+                            borderColor = 'var(--success)';
+                            bgColor = '#f0fdf4';
+                            badgeClass = 'badge-success';
+                            badgeText = '✓ Correct';
+                            showCorrectAnswer = false;
+                        } else if (selectedOptionId === null) {
+                            borderColor = 'var(--border)';
+                            bgColor = 'var(--background)';
+                            badgeClass = ''; // inline style
+                            badgeText = '✗ Not Attempted';
+                            showCorrectAnswer = true;
+                        } else {
+                            borderColor = 'var(--danger)';
+                            bgColor = '#fef2f2';
+                            badgeClass = 'badge-danger';
+                            badgeText = '✗ Wrong';
+                            showCorrectAnswer = true;
+                        }
 
+                        const innerHTML =
+                            '<div class="answer-card card" style="border-left-width: 4px; margin-bottom: 1.5rem; border-left-color: ' + borderColor + '; background-color: ' + bgColor + '; padding: 1rem;">' +
+                            '<h3>Question ' + (index + 1) + '</h3>' +
+                            '<p>' + question.question_text + '</p>' +
+                            '<div style="display: flex; gap: 1rem; margin: 1rem 0;">' +
+                            '<div style="flex: 1;">' +
+                            '<p><b>Your Answer:</b></p>' +
+                            '<p style="background: var(--background); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border);">' +
+                            selectedOptionText +
+                            '</p>' +
+                            '</div>' +
+                            (showCorrectAnswer ?
+                                '<div style="flex: 1;">' +
+                                '<p><b>Correct Answer:</b></p>' +
+                                '<p style="background: var(--background); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border);">' +
+                                correctOptionText +
+                                '</p>' +
+                                '</div>' :
+                                ''
+                            ) +
+                            '</div>' +
+                            '<div style="text-align: center; margin-top: 1rem;">' +
+                            '<span class="status-badge ' + badgeClass + '" style="' + (selectedOptionId === null ? 'background-color: var(--background); color: var(--text-secondary); border: 1px solid var(--border);' : '') + '">' +
+                            badgeText +
+                            '</span>' +
+                            '</div>' +
+                            '</div>';
 
+                        html += innerHTML;
 
-const data =
-await response.json();
+                    });
 
+                } else {
 
+                    html += `
 
-console.log("RESULT DATA:",data);
+                        <p class="text-secondary">No answer details found.</p>
 
+                    `;
 
+                }
 
-if(data.status !== "success")
-{
-throw new Error(data.message);
-}
+                html += `
 
+                    </div>
 
+                    <br>
 
+                    <a href="/results" class="btn btn-outline">
+                        ← Back
+                    </a>
 
-const attempt=data.data;
+                `;
 
 
+                container.innerHTML = html;
 
-let percentage =
-attempt.percentage ?? 
-Math.round(
-(attempt.correct_answers /
-attempt.total_questions)*100
-);
+            } catch (error) {
 
+                console.error(error);
 
+                container.innerHTML = `
 
-let html = `
+                    <div class="error-message">
 
+                        <h3>Failed to load result</h3>
 
+                        <p>${error.message}</p>
 
-<div class="result-card">
+                    </div>
 
+                `;
 
-<h2>
-${attempt.quiz?.title || "Quiz Result"}
-</h2>
+            }
 
+        }
 
-<div class="score-box">
 
-<h1>
-${percentage}%
-</h1>
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => {
+                loadResultDetails();
+            }
 
-<p>
-${percentage >=60 ? 
-"PASSED":"FAILED"}
-</p>
+        );
 
-</div>
-
-
-
-<div class="stats">
-
-
-<p>
-<b>Total Questions:</b>
-${attempt.total_questions}
-</p>
-
-
-<p>
-<b>Correct:</b>
-${attempt.correct_answers}
-</p>
-
-
-<p>
-<b>Wrong:</b>
-${attempt.wrong_answers}
-</p>
-
-
-<p>
-<b>Score:</b>
-${attempt.score}
-</p>
-
-
-</div>
-
-
-
-</div>
-
-
-
-<h2>
-Answer Review
-</h2>
-
-
-
-<div class="answer-review">
-
-`;
-
-
-
-
-// show answers
-
-if(attempt.answers && attempt.answers.length){
-
-
-attempt.answers.forEach((answer,index)=>{
-
-
-html += `
-
-
-<div class="answer-card">
-
-
-<h3>
-Question ${index+1}
-</h3>
-
-
-<p>
-Question ID:
-${answer.question_id}
-</p>
-
-
-<p>
-Your Selected Option:
-${answer.selected_option_id}
-</p>
-
-
-
-<p class="${answer.is_correct ? 
-"correct":"wrong"}">
-
-
-${answer.is_correct ?
-"Correct Answer":
-"Wrong Answer"}
-
-</p>
-
-
-
-</div>
-
-
-`;
-
-
-});
-
-
-}
-
-else{
-
-
-html += `
-
-<p>
-No answer details found.
-</p>
-
-`;
-
-}
-
-
-
-html += `
-
-</div>
-
-<br>
-
-<a href="/results" class="btn btn-outline">
-Back
-</a>
-
-
-`;
-
-
-
-container.innerHTML=html;
-
-
-
-}
-
-catch(error){
-
-
-console.error(error);
-
-
-container.innerHTML=`
-
-<div class="error-message">
-
-<h3>
-Failed to load result
-</h3>
-
-
-<p>
-${error.message}
-</p>
-
-
-</div>
-
-
-`;
-
-}
-
-
-}
-
-
-
-
-// navbar simple
-
-function loadNavbar(){
-
-
-document.getElementById("navbar").innerHTML=`
-
-<nav class="navbar">
-
-
-<a href="/dashboard">
-Dashboard
-</a>
-
-
-<a href="/results">
-Results
-</a>
-
-
-<a href="#" onclick="logout()">
-Logout
-</a>
-
-
-</nav>
-
-`;
-
-
-}
-
-
-
-async function logout(){
-
-
-await fetch("/api/auth/logout",
-{
-method:"POST"
-});
-
-
-window.location.href="/login";
-
-
-}
-
-
-
-
-document.addEventListener(
-"DOMContentLoaded",
-()=>{
-
-loadNavbar();
-
-loadResultDetails();
-
-}
-
-);
-
-
-</script>
-
-
-
+    </script>
 </body>
 
 </html>

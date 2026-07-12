@@ -453,7 +453,7 @@ router.get('/attempts/:attemptId', requireAuth, async (req, res) => {
             // Find the answer for this question from the attempt
             const answer = attempt.answers.find(ans => ans.question_id === question.id);
             const selectedOptionId = answer ? answer.selected_option_id : null;
-            const isCorrect = answer ? answer.is_correct === 1 : false;
+            const isCorrect = answer ? answer.is_correct : false;
 
             return {
                 question_id: question.id,

@@ -16,7 +16,7 @@
         <section class="result-container">
             <div class="result-header">
                 <h2>Quiz Result Details</h2>
-                <a href="/results" class="btn btn-outline">Back to Results</a>
+                <a href="/results" class="btn btn-outline"><Back to Results</a>
             </div>
 
             <div id="result-detail-content">
@@ -133,7 +133,7 @@
         async function loadResultDetails(resultId) {
             try {
                 // Fetch attempt data
-                const attemptResponse = await fetch(`/api/attempts/${resultId}`);
+                const attemptResponse = await fetch(`/api/quizzes/attempts/${resultId}`);
                 if (!attemptResponse.ok) {
                     if (attemptResponse.status === 404) {
                         window.location.href = '/results';
