@@ -174,10 +174,10 @@ router.get('/me', async (req, res) => {
             LIMIT 5`,
             [user.id]
         );
-        const totalAttempts = stats[0]?.total_attempts || 0;
+        const totalAttempts = Number(stats[0]?.total_attempts || 0);
         // const averageScore = parseFloat((stats[0]?.average_score || 0).toFixed(2));
         const averageScore = Number(parseFloat(stats[0]?.average_score || 0).toFixed(2));
-        const highestScore = stats[0]?.highest_score || 0;
+        const highestScore = Number(stats[0]?.highest_score || 0);
         const recentAttempts = recent.map(a => ({
             id: a.id,
             quiz_title: a.quiz_title,

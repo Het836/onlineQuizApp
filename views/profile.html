@@ -147,6 +147,10 @@
             const contentDiv = document.getElementById('profile-content');
             if (contentDiv) contentDiv.style.display = 'block';
 
+            // Show recent attempts section
+document.getElementById('recent-attempts-loading').style.display = 'none';
+document.getElementById('recent-attempts-content').style.display = 'block';
+
             // Fill fields
             document.getElementById('profile-full-name').textContent = profileData.full_name || 'N/A';
             document.getElementById('profile-email').textContent = profileData.email || 'N/A';
@@ -266,6 +270,7 @@
                 profileData = data.data;
                 displayProfile();
 
+                
                 // Hide edit form, show profile content, show edit button
                 document.getElementById('edit-profile-form').style.display = 'none';
                 document.getElementById('profile-content').style.display = 'block';
