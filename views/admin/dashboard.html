@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="navbar" data-nav="guest" data-active="dashboard"></div>
+
+    <main id="main-content" class="container page">
+        <!-- Welcome Section -->
+        <section class="dashboard-header">
+            <div class="dashboard-user-info">
+                <h2>Welcome back, Admin</h2>
+                <p class="welcome-message text-secondary">This is the administration panel</p>
+            </div>
+        </section>
+
+        <!-- Statistics Cards -->
+        <section class="stats-section">
+            <h2 class="section-title">Overview</h2>
+            <div id="stats-container" class="stats-grid grid-4">
+                <!-- Stats will be injected here by JavaScript -->
+                <div class="stat-card card">
+                    <h3 class="stat-title">Loading...</h3>
+                    <p class="stat-value">-</p>
+                </div>
+                <div class="stat-card card">
+                    <h3 class="stat-title">Loading...</h3>
+                    <p class="stat-value">-</p>
+                </div>
+                <div class="stat-card card">
+                    <h3 class="stat-title">Loading...</h3>
+                    <p class="stat-value">-</p>
+                </div>
+                <div class="stat-card card">
+                    <h3 class="stat-title">Loading...</h3>
+                    <p class="stat-value">-</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Action Cards -->
+        <section class="actions-section">
+            <h2 class="section-title">Quick Actions</h2>
+            <div id="actions-container" class="actions-grid grid-3">
+                <!-- Actions will be injected here by JavaScript -->
+                <a href="/admin/students" class="action-card card btn-block">
+                    <div class="action-icon">👥</div>
+                    <h3>Manage Students</h3>
+                    <p>View and manage student accounts</p>
+                </a>
+                <a href="/admin/quizzes" class="action-card card btn-block">
+                    <div class="action-icon">📝</div>
+                    <h3>Manage Quizzes</h3>
+                    <p>Create and manage quizzes</p>
+                </a>
+                <a href="/admin/results" class="action-card card btn-block">
+                    <div class="action-icon">📊</div>
+                    <h3>View All Results</h3>
+                    <p>See detailed quiz results</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section class="activity-section">
+            <h2 class="section-title">Recent Activity</h2>
+            <div id="activity-container" class="activity-card card">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Quiz</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-body">
+                        <!-- Rows will be inserted here -->
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Loading recent activity...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Admin Dashboard Logic
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/admin/dashboard');
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load dashboard data');
+                }
+
+                const stats = data.data;
+                updateStats(stats);
+                updateRecentActivity(stats.recentAttempts);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('Failed to load dashboard data: ' + error.message);
+            }
+        }
+
+        function updateStats(stats) {
+            const statsContainer = document.getElementById('stats-container');
+            statsContainer.innerHTML = `
+                <div class="stat-card card">
+                    <h3 class="stat-title">Total Students</h3>
+                    <p class="stat-value">${stats.totalStudents}</p>
+                </div>
+                <div class="stat-card card">
+                    <h3 class="stat-title">Total Quizzes</h3>
+                    <p class="stat-value">${stats.totalQuizzes}</p>
+                </div>
+                <div class="stat-card card">
+                    <h3 class="stat-title">Total Attempts</h3>
+                    <p class="stat-value">${stats.totalAttempts}</p>
+                </div>
+                <div class="stat-card card">
+                    <h3 class="stat-title">Average Score</h3>
+                    <p class="stat-value">${stats.averageScore}%</p>
+                </div>
+            `;
+        }
+
+        function updateRecentActivity(attempts) {
+            const tbody = document.getElementById('activity-body');
+            if (attempts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No recent activity</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = attempts.map(attempt => `
+                <tr>
+                    <td>${attempt.student_name}</td>
+                    <td>${attempt.quiz_title}</td>
+                    <td>${attempt.score}</td>
+                    <td>${attempt.percentage}</td>
+                    <td>${attempt.date}</td>
+                </tr>
+            `).join('');
+        }
+
+        function showError(message) {
+            // Create a simple error banner
+            const existing = document.querySelector('.error-banner');
+            if (existing) existing.remove();
+
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.textContent = message;
+            banner.style.backgroundColor = '#ffe6e6';
+            banner.style.color = '#d32f2f';
+            banner.style.padding = '1rem';
+            banner.style.marginBottom = '1rem';
+            banner.style.borderRadius = '4px';
+
+            const mainContent = document.getElementById('main-content');
+            mainContent.insertBefore(banner, mainContent.firstChild);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>

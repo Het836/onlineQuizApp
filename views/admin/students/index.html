@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="navbar" data-nav="guest" data-active="dashboard"></div>
+
+    <main id="main-content" class="container page">
+        <!-- Header -->
+        <section class="dashboard-header">
+            <div class="dashboard-user-info">
+                <h2>Student Management</h2>
+                <p class="welcome-message text-secondary">View and manage student accounts</p>
+            </div>
+        </section>
+
+        <!-- Search and Stats -->
+        <section class="stats-section">
+            <div class="search-stats-container">
+                <div class="search-box">
+                    <input type="text" id="student-search" placeholder="Search by name or email...">
+                    <button id="search-btn" class="btn btn-primary">Search</button>
+                </div>
+                <div class="stats-box">
+                    <p>Total Students: <span id="total-students">0</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Students Table -->
+        <section class="activity-section">
+            <div id="students-container" class="activity-card card">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Registered On</th>
+                            <th>Quiz Attempts</th>
+                            <th>Average Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-body">
+                        <!-- Loading state -->
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Loading students...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- Pagination controls -->
+                <div id="pagination-controls" class="pagination-controls">
+                    <button id="prev-page" class="btn btn-outline">← Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" class="btn btn-outline">Next →</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Student Management Logic
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let totalPages = 1;
+
+        async function loadStudents(searchTerm = '', page = 1) {
+            try {
+                const response = await fetch(`/api/students?search=${encodeURIComponent(searchTerm)}&page=${page}&limit=${itemsPerPage}`);
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load students');
+                }
+
+                const students = data.data.students || [];
+                const pagination = data.data.pagination || {};
+
+                renderStudentsTable(students);
+                updatePaginationInfo(pagination);
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showError('Failed to load students: ' + error.message);
+            }
+        }
+
+        function renderStudentsTable(students) {
+            const tbody = document.getElementById('students-body');
+
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No students found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = students.map(student => `
+                <tr>
+                    <td>${student.full_name || 'N/A'}</td>
+                    <td>${student.email || 'N/A'}</td>
+                    <td>${new Date(student.registration_date).toLocaleDateString()}</td>
+                    <td>${student.total_quizzes_attempted || 0}</td>
+                    <td>${(student.average_score || 0).toFixed(2)}%</td>
+                    <td>
+                        <a href="/admin/students/${student.id}" class="btn btn-sm btn-outline">View Profile</a>
+                        <a href="/admin/students/${student.id}/attempts" class="btn btn-sm btn-outline">View Attempts</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePaginationInfo(pagination) {
+            document.getElementById('total-students').textContent = pagination.total || 0;
+            document.getElementById('page-info').textContent = `Page ${pagination.page} of ${pagination.totalPages}`;
+
+            // Enable/disable navigation buttons
+            document.getElementById('prev-page').disabled = !pagination.hasPrev;
+            document.getElementById('next-page').disabled = !pagination.hasNext;
+        }
+
+        function showError(message) {
+            // Create a simple error banner
+            const existing = document.querySelector('.error-banner');
+            if (existing) existing.remove();
+
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.textContent = message;
+            banner.style.backgroundColor = '#ffe6e6';
+            banner.style.color = '#d32f2f';
+            banner.style.padding = '1rem';
+            banner.style.marginBottom = '1rem';
+            borderRadius = '4px';
+
+            const mainContent = document.getElementById('main-content');
+            mainContent.insertBefore(banner, mainContent.firstChild);
+        }
+
+        // Event listeners
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const searchTerm = document.getElementById('student-search').value.trim();
+            currentPage = 1; // Reset to first page on new search
+            loadStudents(searchTerm, currentPage);
+        });
+
+        document.getElementById('student-search').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const searchTerm = document.getElementById('student-search').value.trim();
+                currentPage = 1; // Reset to first page on new search
+                loadStudents(searchTerm, currentPage);
+            }
+        });
+
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                const searchTerm = document.getElementById('student-search').value.trim();
+                loadStudents(searchTerm, currentPage);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                const searchTerm = document.getElementById('student-search').value.trim();
+                loadStudents(searchTerm, currentPage);
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStudents();
+        });
+    </script>
+</body>
+</html>

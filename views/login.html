@@ -83,8 +83,12 @@
                     throw new Error(data.message || 'Login failed');
                 }
 
-                // Login successful - redirect to dashboard
-                window.location.href = '/dashboard';
+                // Login successful - redirect based on role
+                if (data.data && data.data.role === 'admin') {
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    window.location.href = '/dashboard';
+                }
             } catch (error) {
                 showError('Login failed: ' + error.message);
                 console.error('Login error:', error);

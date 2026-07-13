@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attempts - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="navbar" data-nav="guest" data-active="dashboard"></div>
+
+    <main id="main-content" class="container page">
+        <!-- Back Button -->
+        <div class="mb-4">
+            <a href="/admin/students" class="btn btn-outline">← Back to Students</a>
+        </div>
+
+        <!-- Header -->
+        <section class="dashboard-header">
+            <div class="dashboard-user-info">
+                <h2>Student Attempts</h2>
+                <p class="welcome-message text-secondary">View all quiz attempts for this student</p>
+            </div>
+        </section>
+
+        <!-- Student Info -->
+        <section class="stats-section">
+            <div id="student-info-container" class="activity-card card">
+                <div class="info-loading">
+                    <p>Loading student information...</p>
+                </div>
+                <div id="student-info-content" style="display: none;">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h3>Full Name</h3>
+                            <p id="student-full-name"></p>
+                        </div>
+                        <div class="info-item">
+                            <h3>Email</h3>
+                            <p id="student-email"></p>
+                        </div>
+                    </div>
+                </div>
+                <div id="student-info-error" class="error-message" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Attempts Table -->
+        <section class="activity-section">
+            <div id="attempts-container" class="activity-card card">
+                <div id="attempts-loading">
+                    <p>Loading attempts...</p>
+                </div>
+                <table id="attempts-table" class="activity-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Quiz Title</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attempts-body">
+                        <!-- Rows will be inserted here -->
+                    </tbody>
+                </table>
+                <div id="attempts-empty" class="text-center text-muted" style="display: none;">
+                    <p>No quiz attempts found for this student.</p>
+                </div>
+                <div id="attempts-error" class="error-message" style="display: none;"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Get student ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('id') || window.location.pathname.split('/').slice(-2)[0]; // /admin/students/:id/attempts
+
+        // Student Attempts Logic
+        async function loadStudentAttempts() {
+            try {
+                // Load student info
+                const studentResponse = await fetch(`/api/students/${studentId}`);
+                const studentData = await studentResponse.json();
+
+                if (!studentResponse.ok || studentData.status !== 'success') {
+                    throw new Error(studentData.message || 'Failed to load student information');
+                }
+
+                const student = studentData.data;
+                displayStudentInfo(student);
+
+                // Load all attempts
+                loadAllAttempts();
+            } catch (error) {
+                console.error('Error loading student attempts:', error);
+                showError('student-info-error', 'Failed to load student information: ' + error.message);
+            }
+        }
+
+        function displayStudentInfo(student) {
+            document.getElementById('student-full-name').textContent = student.full_name || 'N/A';
+            document.getElementById('student-email').textContent = student.email || 'N/A';
+
+            // Hide loading, show content
+            document.getElementById('student-info-container').querySelector('.info-loading').style.display = 'none';
+            document.getElementById('student-info-content').style.display = 'block';
+        }
+
+        async function loadAllAttempts() {
+            try {
+                const response = await fetch(`/api/students/${studentId}/attempts`);
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load attempts');
+                }
+
+                const attempts = data.data.attempts || [];
+                displayAttempts(attempts);
+            } catch (error) {
+                console.error('Error loading attempts:', error);
+                showError('attempts-error', 'Failed to load attempts: ' + error.message);
+            }
+        }
+
+        function displayAttempts(attempts) {
+            const loadingEl = document.getElementById('attempts-loading');
+            const tableEl = document.getElementById('attempts-table');
+            const emptyEl = document.getElementById('attempts-empty');
+            const errorEl = document.getElementById('attempts-error');
+            const tbody = document.getElementById('attempts-body');
+
+            // Hide loading
+            loadingEl.style.display = 'none';
+
+            if (attempts.length === 0) {
+                emptyEl.style.display = 'block';
+                tableEl.style.display = 'none';
+                return;
+            }
+
+            // Show table
+            tableEl.style.display = 'table';
+            emptyEl.style.display = 'none';
+
+            // Populate rows
+            tbody.innerHTML = attempts.map(attempt => `
+                <tr>
+                    <td>${attempt.quiz_title || 'N/A'}</td>
+                    <td>${attempt.score || 0}</td>
+                    <td>${attempt.percentage || 0}%</td>
+                    <td>${attempt.date ? new Date(attempt.date).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <a href="/results/${attempt.id}" class="btn btn-sm btn-outline">View Result</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', loadStudentAttempts);
+    </script>
+</body>
+</html>

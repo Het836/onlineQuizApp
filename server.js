@@ -51,6 +51,14 @@ app.get('/api/health', (req, res) => {
 const authRouter = require('./routes/api/auth');
 app.use('/api/auth', authRouter);
 
+// Admin routes
+const adminRouter = require('./routes/api/admin');
+app.use('/api/admin', adminRouter);
+
+// Student management routes
+const studentRouter = require('./routes/api/students');
+app.use('/api/students', studentRouter);
+
 // 404 handler
 app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
