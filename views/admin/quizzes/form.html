@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Form - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="navbar" data-nav="auth" data-active="quizzes"></div>
+
+    <main id="main-content" class="container page">
+        <!-- Form Header -->
+        <section class="form-header">
+            <div class="form-header-content">
+                <a href="/admin/quizzes" class="btn btn-outline-secondary">← Back to Quizzes</a>
+                <h1 id="formTitle">Loading...</h1>
+            </div>
+        </section>
+
+        <!-- Quiz Form -->
+        <section class="quiz-form-section">
+            <form id="quizForm" novalidate>
+                <!-- Quiz Basic Info -->
+                <div class="form-section">
+                    <h2>Quiz Information</h2>
+                    <div class="form-group">
+                        <label for="quizTitle">Title *</label>
+                        <input type="text" id="quizTitle" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quizDescription">Description *</label>
+                        <textarea id="quizDescription" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="quizDuration">Duration (minutes) *</label>
+                        <input type="number" id="quizDuration" name="duration_minutes" min="1" required>
+                    </div>
+                    <div class="form-group form-check">
+                        <label for="quizActive">Active</label>
+                        <input type="checkbox" id="quizActive" name="is_active">
+                    </div>
+                </div>
+
+                <!-- Questions -->
+                <div class="form-section">
+                    <h2>Questions</h2>
+                    <div id="questionsContainer">
+                        <!-- Questions will be dynamically added here -->
+                        <div class="empty-state">
+                            <p>No questions added yet. Click "Add Question" to start.</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="addQuestionBtn" class="btn btn-primary">Add Question</button>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-section form-actions">
+                    <button type="submit" id="submitBtn" class="btn btn-primary">Save Quiz</button>
+                    <span id="formStatus" class="form-status"></span>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Quiz Form Logic (Create/Edit)
+        let quizId = null; // null for create, numeric ID for edit
+        let isEditMode = false;
+
+        function escapeHtml(text) {
+            if (text == null) {
+                return '';
+            }
+            const map = {
+                '&': '&',
+                '<': '<',
+                '>': '>',
+                '"': '"',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>'"]/g, m => map[m]);
+        }
+
+        async function initForm() {
+            const path = window.location.pathname;
+            const parts = path.split('/');
+            // Determine if we are editing: /admin/quizzes/:id/edit
+            if (path.includes('/edit')) {
+                const idIndex = parts.indexOf('quizzes') + 1;
+                quizId = parseInt(parts[idIndex]);
+                isEditMode = !isNaN(quizId);
+                document.getElementById('formTitle').textContent = 'Edit Quiz';
+            } else if (path.endsWith('/create')) {
+                quizId = null;
+                isEditMode = false;
+                document.getElementById('formTitle').textContent = 'Create New Quiz';
+            } else {
+                // fallback
+                quizId = null;
+                isEditMode = false;
+                document.getElementById('formTitle').textContent = 'Quiz Form';
+            }
+
+            // If edit mode, load existing quiz data
+            if (isEditMode && quizId) {
+                await loadQuizData();
+            } else {
+                // Initialize with one empty question
+                addQuestionRow();
+            }
+
+            // Setup event listeners
+            document.getElementById('addQuestionBtn').addEventListener('click', addQuestionRow);
+            document.getElementById('quizForm').addEventListener('submit', handleFormSubmit);
+        }
+
+        async function loadQuizData() {
+            try {
+                const response = await fetch(`/api/admin/quizzes/${quizId}`);
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load quiz');
+                }
+
+                const quiz = data.data;
+                // Fill basic info
+                document.getElementById('quizTitle').value = quiz.title || '';
+                document.getElementById('quizDescription').value = quiz.description || '';
+                document.getElementById('quizDuration').value = quiz.duration_minutes || '';
+                document.getElementById('quizActive').checked = quiz.is_active === true;
+
+                // Clear any existing question rows (except we will replace)
+                const container = document.getElementById('questionsContainer');
+                container.innerHTML = '';
+
+                // Add questions
+                if (quiz.questions && quiz.questions.length > 0) {
+                    quiz.questions.forEach(q => {
+                        addQuestionRow(q);
+                    });
+                } else {
+                    // Ensure at least one question row
+                    addQuestionRow();
+                }
+            } catch (error) {
+                console.error('Error loading quiz data:', error);
+                showError('Failed to load quiz data: ' + error.message);
+                // Fallback to empty form
+                addQuestionRow();
+            }
+        }
+
+        function addQuestionRow(questionData = null) {
+            const container = document.getElementById('questionsContainer');
+            const questionIndex = container.querySelectorAll('.question-row').length;
+
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-row card mb-3 p-3';
+            questionDiv.dataset.index = questionIndex;
+            questionDiv.innerHTML = `
+                <div class="question-header d-flex justify-content-between align-items-center">
+                    <h4>Question ${questionIndex + 1}</h4>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-question-btn" ${questionIndex === 0 ? 'disabled' : ''}>
+                        Remove Question
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label for="questionText_${questionIndex}">Question Text *</label>
+                    <input type="text" id="questionText_${questionIndex}" class="form-control question-input" value="${questionData ? escapeHtml(questionData.question_text) : ''}" required>
+                </div>
+                <div class="options-header mb-2">
+                    <h5>Options</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-option-btn">Add Option</button>
+                </div>
+                <div class="options-container" id="optionsContainer_${questionIndex}">
+                    <!-- Options will be added here -->
+                </div>
+                <div class="form-text text-muted">Each question must have at least 2 options and exactly one correct option.</div>
+            `;
+
+            // Add to container
+            container.appendChild(questionDiv);
+
+            // Add options
+            if (questionData && questionData.options && questionData.options.length > 0) {
+                questionData.options.forEach(opt => {
+                    addOptionRow(questionDiv, opt);
+                });
+            } else {
+                // Add two empty options by default
+                addOptionRow(questionDiv);
+                addOptionRow(questionDiv);
+            }
+
+            // Update remove button states
+            updateRemoveButtonStates();
+
+            // Add event listener for remove question button
+            const removeBtn = questionDiv.querySelector('.remove-question-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', () => {
+                    if (confirm('Remove this question?')) {
+                        questionDiv.remove();
+                        renumberQuestions();
+                        updateRemoveButtonStates();
+                    }
+                });
+            }
+
+            // Add event listeners for add option buttons
+            const addOptionBtns = questionDiv.querySelectorAll('.add-option-btn');
+            addOptionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    addOptionRow(btn.closest('.question-row'));
+                });
+            });
+        }
+
+        function addOptionRow(questionRow, optionData = null) {
+            const optionsContainer = questionRow.querySelector('.options-container');
+            const optionIndex = optionsContainer.querySelectorAll('.option-row').length;
+
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-row d-flex align-items-center mb-2';
+            optionDiv.innerHTML = `
+                <div class="form-check me-3">
+                    <input type="radio" name="correctOption_${questionRow.dataset.index}" value="${optionIndex}" ${optionData && optionData.is_correct ? 'checked' : ''} class="form-check-input correct-option-input">
+                </div>
+                <div class="flex-grow-1">
+                    <input type="text" class="form-control option-input" placeholder="Option text" value="${optionData ? escapeHtml(optionData.option_text) : ''}" required>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-option-btn" ${optionIndex === 0 ? 'disabled' : ''}>Remove</button>
+            `;
+
+            optionsContainer.appendChild(optionDiv);
+
+            // Update remove button states for options in this question
+            updateOptionRemoveStates(optionsContainer);
+
+            // Add event listener for remove option button
+            const removeBtn = optionDiv.querySelector('.remove-option-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', () => {
+                    if (confirm('Remove this option?')) {
+                        optionDiv.remove();
+                        updateOptionRemoveStates(optionsContainer);
+                    }
+                });
+            }
+        }
+
+        function updateRemoveButtonStates() {
+            const questionRows = document.querySelectorAll('.question-row');
+            questionRows.forEach((row, index) => {
+                const removeBtn = row.querySelector('.remove-question-btn');
+                if (removeBtn) {
+                    // Enable remove button if more than one question
+                    removeBtn.disabled = questionRows.length <= 1;
+                }
+            });
+        }
+
+        function updateOptionRemoveStates(optionsContainer) {
+            const optionRows = optionsContainer.querySelectorAll('.option-row');
+            optionRows.forEach((row, index) => {
+                const removeBtn = row.querySelector('.remove-option-btn');
+                if (removeBtn) {
+                    // Disable remove if only one option left
+                    removeBtn.disabled = optionRows.length <= 1;
+                }
+            });
+        }
+
+        function renumberQuestions() {
+            const questionRows = document.querySelectorAll('.question-row');
+            questionRows.forEach((row, index) => {
+                row.dataset.index = index;
+                const header = row.querySelector('.question-header h4');
+                if (header) {
+                    header.textContent = `Question ${index + 1}`;
+                }
+                // Update question input id and name
+                const questionInput = row.querySelector('.question-input');
+                if (questionInput) {
+                    questionInput.id = `questionText_${index}`;
+                    questionInput.name = `questions[${index}].question_text`;
+                }
+                // Update options container id
+                const optionsContainer = row.querySelector('.options-container');
+                if (optionsContainer) {
+                    optionsContainer.id = `optionsContainer_${index}`;
+                    // Renumber options within this question
+                    const optionRows = optionsContainer.querySelectorAll('.option-row');
+                    optionRows.forEach((optRow, optIndex) => {
+                        const optionInput = optRow.querySelector('.option-input');
+                        const correctInput = optRow.querySelector('.correct-option-input');
+                        if (optionInput) {
+                            optionInput.name = `questions[${index}].options[${optIndex}].option_text`;
+                        }
+                        if (correctInput) {
+                            correctInput.name = `questions[${index}].options[${optIndex}].is_correct`;
+                            correctInput.value = optIndex;
+                        }
+                    });
+                }
+            });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+
+            // Build JSON structure
+            const quizData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                duration_minutes: parseInt(formData.get('duration_minutes')),
+                is_active: formData.get('is_active') === 'on' || formData.get('is_active') === true
+            };
+
+            // Collect questions and options
+            const questions = [];
+            const questionRows = document.querySelectorAll('.question-row');
+            let valid = true;
+            let errorMessage = '';
+            let invalidElement = null;
+
+            questionRows.forEach((qRow, qIndex) => {
+                const questionText = qRow.querySelector('.question-input').value.trim();
+                if (!questionText) {
+                    valid = false;
+                    errorMessage = `Question ${qIndex + 1}: Text is required`;
+                    invalidElement = qRow;
+                    return;
+                }
+
+                const optionsContainer = qRow.querySelector('.options-container');
+                const optionRows = optionsContainer.querySelectorAll('.option-row');
+                if (optionRows.length < 2) {
+                    valid = false;
+                    errorMessage = `Question ${qIndex + 1}: Must have at least 2 options`;
+                    invalidElement = qRow;
+                    return;
+                }
+
+                const options = [];
+                let correctCount = 0;
+                optionRows.forEach((oRow, oIndex) => {
+                    const optionText = oRow.querySelector('.option-input').value.trim();
+                    const isCorrect = oRow.querySelector('.correct-option-input').checked;
+                    if (!optionText) {
+                        valid = false;
+                        errorMessage = `Question ${qIndex + 1}, Option ${String.fromCharCode(65 + oIndex)}: Text is required`;
+                        invalidElement = qRow;
+                        return;
+                    }
+                    options.push({
+                        option_text: optionText,
+                        is_correct: isCorrect ? 1 : 0
+                    });
+                    if (isCorrect) correctCount++;
+                });
+
+                if (correctCount !== 1) {
+                    valid = false;
+                    errorMessage = `Question ${qIndex + 1}: Must have exactly one correct option`;
+                    invalidElement = qRow;
+                    return;
+                }
+
+                questions.push({
+                    question_text: questionText,
+                    options: options
+                });
+            });
+
+            if (!valid) {
+                showError(errorMessage);
+                if (invalidElement) {
+                    invalidElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                return;
+            }
+
+            quizData.questions = questions;
+
+            try {
+                let response;
+                if (isEditMode && quizId) {
+                    response = await fetch(`/api/admin/quizzes/${quizId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(quizData)
+                    });
+                } else {
+                    response = await fetch(`/api/admin/quizzes`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(quizData)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Failed to save quiz');
+                }
+
+                showSuccess('Quiz saved successfully!');
+                // Redirect to quizzes list after a short delay
+                setTimeout(() => {
+                    window.location.href = '/admin/quizzes';
+                }, 1500);
+            } catch (error) {
+                console.error('Error saving quiz:', error);
+                showError('Failed to save quiz: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            // Remove existing error banner
+            const existing = document.querySelector('.error-banner');
+            if (existing) existing.remove();
+
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.textContent = message;
+            banner.style.backgroundColor = '#ffe6e6';
+            banner.style.color = '#d32f2f';
+            banner.style.padding = '1rem';
+            banner.style.marginBottom = '1rem';
+            banner.style.borderRadius = '4px';
+
+            const mainContent = document.getElementById('main-content');
+            mainContent.insertBefore(banner, mainContent.firstChild);
+        }
+
+        function showSuccess(message) {
+            // Remove existing success banner
+            const existing = document.querySelector('.success-banner');
+            if (existing) existing.remove();
+
+            const banner = document.createElement('div');
+            banner.className = 'success-banner';
+            banner.textContent = message;
+            banner.style.backgroundColor = '#e8f5e9';
+            banner.style.color = '#2e7d32';
+            banner.style.padding = '1rem';
+            banner.style.marginBottom = '1rem';
+            borderRadius: '4px';
+
+            const mainContent = document.getElementById('main-content');
+            mainContent.insertBefore(banner, mainContent.firstChild);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', initForm);
+    </script>
+</body>
+</html>

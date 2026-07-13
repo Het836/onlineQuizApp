@@ -23,8 +23,9 @@ class Quiz {
     return rows[0];
   }
 
-  // Find quiz by ID with questions and options (without correct answers)
-  static async findByIdWithQuestions(id) {
+  // Find quiz by ID with questions and options.
+  // If includeAnswers is true, includes the is_correct flag in options.
+  static async findByIdWithQuestions(id, includeAnswers = false) {
     try {
       // Get the quiz
       const quiz = await this.findById(id);
@@ -35,14 +36,19 @@ class Quiz {
       // Get all questions for this quiz
       const questions = await Question.findByQuizId(id);
 
-      // For each question, get its options (without is_correct)
+      // For each question, get its options
       for (let i = 0; i < questions.length; i++) {
         const options = await Option.findByQuestionId(questions[i].id);
-        // Remove the is_correct field before sending to frontend
-        questions[i].options = options.map(option => {
-          const { is_correct, ...optionWithoutCorrect } = option;
-          return optionWithoutCorrect;
-        });
+        if (includeAnswers) {
+          // Keep is_correct field
+          questions[i].options = options;
+        } else {
+          // Remove the is_correct field before sending to frontend
+          questions[i].options = options.map(option => {
+            const { is_correct, ...optionWithoutCorrect } = option;
+            return optionWithoutCorrect;
+          });
+        }
       }
 
       // Attach questions to quiz

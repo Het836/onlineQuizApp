@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Online Quiz System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="navbar" data-nav="auth" data-active="profile"></div>
+
+    <main id="main-content" class="container page">
+        <!-- Profile Header -->
+        <section class="profile-header">
+            <div class="profile-header-content">
+                <h1>My Profile</h1>
+            </div>
+        </section>
+
+        <!-- Profile Info -->
+        <section class="profile-info-section">
+            <div id="profile-loading">
+                <p>Loading profile...</p>
+            </div>
+            <div id="profile-content" style="display: none;">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h3>Full Name</h3>
+                        <p id="profile-full-name"></p>
+                    </div>
+                    <div class="info-item">
+                        <h3>Email</h3>
+                        <p id="profile-email"></p>
+                    </div>
+                    <div class="info-item">
+                        <h3>Registration Date</h3>
+                        <p id="profile-registered-on"></p>
+                    </div>
+                    <div class="info-item">
+                        <h3>Total Quizzes Attempted</h3>
+                        <p id="profile-total-attempts"></p>
+                    </div>
+                    <div class="info-item">
+                        <h3>Average Score</h3>
+                        <p id="profile-average-score"></p>
+                    </div>
+                    <div class="info-item">
+                        <h3>Highest Score</h3>
+                        <p id="profile-highest-score"></p>
+                    </div>
+                </div>
+            </div>
+            <div id="profile-error" class="error-message" style="display: none;"></div>
+        </section>
+
+        <!-- Recent Attempts -->
+        <section class="recent-attempts-section">
+            <div id="recent-attempts-loading">
+                <p>Loading recent attempts...</p>
+            </div>
+            <div id="recent-attempts-content" style="display: none;">
+                <h2>Recent Attempts</h2>
+                <div id="recent-attempts-table-wrapper">
+                    <table id="recent-attempts-table" class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Quiz Title</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-attempts-body">
+                            <!-- Rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="recent-attempts-empty" class="text-center text-muted" style="display: none;">
+                    <p>No recent attempts found.</p>
+                </div>
+                <div id="recent-attempts-error" class="error-message" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Edit Profile Button -->
+        <section class="profile-actions">
+            <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+        </section>
+
+        <!-- Edit Profile Form (hidden initially) -->
+        <section id="edit-profile-form" style="display: none;">
+            <div class="form-section">
+                <h2>Edit Profile</h2>
+                <div class="form-group">
+                    <label for="edit-full-name">Full Name *</label>
+                    <input type="text" id="edit-full-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-email">Email *</label>
+                    <input type="email" id="edit-email" required>
+                </div>
+                <div class="form-actions">
+                    <button id="save-profile-btn" class="btn btn-primary">Save</button>
+                    <button id="cancel-edit-btn" class="btn btn-outline">Cancel</button>
+                </div>
+                <div id="edit-profile-error" class="error-message" style="display: none;"></div>
+                <div id="edit-profile-success" class="success-message" style="display: none;"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Profile Page Logic
+        let profileData = null;
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load profile');
+                }
+
+                profileData = data.data;
+                displayProfile();
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showError('profile-error', 'Failed to load profile: ' + error.message);
+            }
+        }
+
+        function displayProfile() {
+            // Hide loading, show content
+            document.getElementById('profile-loading').style.display = 'none';
+            const contentDiv = document.getElementById('profile-content');
+            if (contentDiv) contentDiv.style.display = 'block';
+
+            // Fill fields
+            document.getElementById('profile-full-name').textContent = profileData.full_name || 'N/A';
+            document.getElementById('profile-email').textContent = profileData.email || 'N/A';
+            document.getElementById('profile-registered-on').textContent =
+                profileData.created_at ? new Date(profileData.created_at).toLocaleDateString() : 'N/A';
+            document.getElementById('profile-total-attempts').textContent =
+                profileData.total_quizzes_attempted !== undefined ? profileData.total_quizzes_attempted : 0;
+            document.getElementById('profile-average-score').textContent =
+                profileData.average_score !== undefined ? profileData.average_score.toFixed(2) + '%' : '0%';
+            document.getElementById('profile-highest-score').textContent =
+                profileData.highest_score !== undefined ? profileData.highest_score.toFixed(2) : '0';
+
+            // Populate recent attempts table
+            const tbody = document.getElementById('recent-attempts-body');
+            const recentAttempts = profileData.recent_attempts || [];
+            const attemptsTable = document.getElementById('recent-attempts-table');
+            const attemptsEmpty = document.getElementById('recent-attempts-empty');
+            const attemptsWrapper = document.getElementById('recent-attempts-table-wrapper');
+
+            if (recentAttempts.length === 0) {
+                attemptsTable.style.display = 'none';
+                attemptsEmpty.style.display = 'block';
+                attemptsWrapper.style.display = 'block';
+                return;
+            }
+
+            attemptsTable.style.display = 'table';
+            attemptsEmpty.style.display = 'none';
+            attemptsWrapper.style.display = 'block';
+
+            tbody.innerHTML = recentAttempts.map(attempt => {
+                return `
+                    <tr>
+                        <td>${attempt.quiz_title || 'N/A'}</td>
+                        <td>${attempt.score !== null ? attempt.score : 'N/A'}</td>
+                        <td>${attempt.percentage !== null ? attempt.percentage.toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${attempt.date || ''}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        function showSuccess(elementId, message) {
+            const successEl = document.getElementById(elementId);
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+        }
+
+        function hideErrorSuccess(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) el.style.display = 'none';
+        }
+
+        // Edit profile functionality
+        document.getElementById('edit-profile-btn').addEventListener('click', () => {
+            // Show edit form, hide profile content
+            document.getElementById('profile-content').style.display = 'none';
+            document.getElementById('edit-profile-form').style.display = 'block';
+            document.getElementById('edit-profile-btn').style.display = 'none';
+
+            // Prefill form with current values
+            document.getElementById('edit-full-name').value = profileData.full_name || '';
+            document.getElementById('edit-email').value = profileData.email || '';
+
+            // Clear any previous messages
+            hideErrorSuccess('edit-profile-error');
+            hideErrorSuccess('edit-profile-success');
+        });
+
+        document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+            // Hide edit form, show profile content
+            document.getElementById('edit-profile-form').style.display = 'none';
+            document.getElementById('profile-content').style.display = 'block';
+            document.getElementById('edit-profile-btn').style.display = 'inline-block';
+            // Clear messages
+            hideErrorSuccess('edit-profile-error');
+            hideErrorSuccess('edit-profile-success');
+        });
+
+        document.getElementById('save-profile-btn').addEventListener('click', async () => {
+            const fullName = document.getElementById('edit-full-name').value.trim();
+            const email = document.getElementById('edit-email').value.trim();
+
+            // Basic validation
+            if (!fullName || !email) {
+                showError('edit-profile-error', 'Name and email are required');
+                return;
+            }
+            // Simple email validation
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email)) {
+                showError('edit-profile-error', 'Invalid email format');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/me', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ full_name: fullName, email: email })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to update profile');
+                }
+
+                // Update profileData and refresh display
+                profileData = data.data;
+                displayProfile();
+
+                // Hide edit form, show profile content, show edit button
+                document.getElementById('edit-profile-form').style.display = 'none';
+                document.getElementById('profile-content').style.display = 'block';
+                document.getElementById('edit-profile-btn').style.display = 'inline-block';
+
+                showSuccess('edit-profile-success', 'Profile updated successfully');
+                // Clear error
+                hideErrorSuccess('edit-profile-error');
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showError('edit-profile-error', 'Failed to update profile: ' + error.message);
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+</html>

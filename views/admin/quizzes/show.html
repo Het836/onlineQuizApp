@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Details - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="navbar" data-nav="auth" data-active="quizzes"></div>
+
+    <main id="main-content" class="container page">
+        <!-- Quiz Header -->
+        <section class="quiz-header">
+            <div class="quiz-header-content">
+                <a href="/admin/quizzes" class="btn btn-outline-secondary">← Back to Quizzes</a>
+                <h1 id="quizTitle">Loading quiz...</h1>
+                <div class="quiz-meta">
+                    <span id="quizStatus" class="status-badge"></span>
+                    <span id="quizCreated">Created: </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quiz Info -->
+        <section class="quiz-info">
+            <div class="info-grid">
+                <div class="info-item">
+                    <h3>Description</h3>
+                    <p id="quizDescription">Loading...</p>
+                </div>
+                <div class="info-item">
+                    <h3>Duration</h3>
+                    <p id="quizDuration">Loading...</p>
+                </div>
+                <div class="info-item">
+                    <h3>Questions</h3>
+                    <p id="quizQuestionCount">Loading...</p>
+                </div>
+                <div class="info-item">
+                    <h3>Attempts</h3>
+                    <p id="quizAttemptCount">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Questions List -->
+        <section class="questions-section">
+            <h2>Questions</h2>
+            <div id="questionsContainer">
+                <!-- Questions will be injected here -->
+                <p class="text-center text-muted">Loading questions...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Online Quiz System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Quiz Details Logic
+        async function loadQuizDetails() {
+            const pathParts = window.location.pathname.split('/');
+            const quizId = pathParts[pathParts.length - 1];
+            if (!quizId || isNaN(quizId)) {
+                showError('Invalid quiz ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/quizzes/${quizId}`);
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load quiz');
+                }
+
+                const quiz = data.data;
+                renderQuizDetails(quiz);
+            } catch (error) {
+                console.error('Error loading quiz details:', error);
+                showError('Failed to load quiz details: ' + error.message);
+            }
+        }
+
+        function renderQuizDetails(quiz) {
+            document.getElementById('quizTitle').textContent = quiz.title || 'Untitled Quiz';
+            document.getElementById('quizDescription').textContent = quiz.description || 'No description';
+            document.getElementById('quizDuration').textContent = quiz.duration_minutes + ' minutes';
+            document.getElementById('quizQuestionCount').textContent = quiz.questions ? quiz.questions.length : 0;
+            document.getElementById('quizAttemptCount').textContent = quiz.total_attempts || 0;
+
+            const statusBadge = document.getElementById('quizStatus');
+            if (quiz.is_active) {
+                statusBadge.textContent = 'Active';
+                statusBadge.className = 'status-badge status-active';
+            } else {
+                statusBadge.textContent = 'Inactive';
+                statusBadge.className = 'status-badge status-inactive';
+            }
+            document.getElementById('quizCreated').textContent = 'Created: ' + new Date(quiz.created_at).toLocaleDateString();
+
+            // Render questions
+            const questionsContainer = document.getElementById('questionsContainer');
+            if (!quiz.questions || quiz.questions.length === 0) {
+                questionsContainer.innerHTML = '<p class="text-center text-muted">No questions found for this quiz.</p>';
+                return;
+            }
+
+            questionsContainer.innerHTML = quiz.questions.map((q, index) => {
+                return `
+                    <div class="question-card card mb-3">
+                        <div class="question-header">
+                            <h4>Question ${index + 1}</h4>
+                        </div>
+                        <div class="question-body">
+                            <p>${escapeHtml(q.question_text)}</p>
+                        </div>
+                        <div class="question-options">
+                            ${q.options && q.options.length > 0 ? q.options.map((opt, optIdx) => {
+                                const letter = String.fromCharCode(65 + optIdx); // A, B, C, D
+                                return `
+                                    <label class="option-label">
+                                        <input type="radio" disabled ${opt.is_correct ? 'checked' : ''}>
+                                        <span class="option-text">${letter}. ${escapeHtml(opt.option_text)} ${opt.is_correct ? '<span class="correct-badge">(Correct)</span>' : ''}</span>
+                                    </label>
+                                `;
+                            }).join('') : '<p class="text-muted">No options available</p>'
+                        }
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            if (text == null) {
+                return '';
+            }
+            const map = {
+                '&': '&',
+                '<': '<',
+                '>': '>',
+                '"': '"',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function showError(message) {
+            // Remove existing error banner
+            const existing = document.querySelector('.error-banner');
+            if (existing) existing.remove();
+
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.textContent = message;
+            banner.style.backgroundColor = '#ffe6e6';
+            banner.style.color = '#d32f2f';
+            banner.style.padding = '1rem';
+            banner.style.marginBottom = '1rem';
+            banner.style.borderRadius = '4px';
+
+            const mainContent = document.getElementById('main-content');
+            mainContent.insertBefore(banner, mainContent.firstChild);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', loadQuizDetails);
+    </script>
+</body>
+</html>

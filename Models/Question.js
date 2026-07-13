@@ -4,12 +4,13 @@ const db = require('../config/db');
 class Question {
   // Create a new question
   static async create(questionData) {
-    const { quiz_id, question_text, marks } = questionData;
+    const { quiz_id, question_text } = questionData;
+    const marks = questionData.marks ?? 1;
     const [result] = await db.promisePool.query(
       'INSERT INTO questions (quiz_id, question_text, marks) VALUES (?, ?, ?)',
       [quiz_id, question_text, marks]
     );
-    return { id: result.insertId, ...questionData };
+    return { id: result.insertId, quiz_id, question_text, marks };
   }
 
   // Find question by ID

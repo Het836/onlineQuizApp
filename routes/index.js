@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const homeController = require('../controllers/homeController');
 const quizRoutes = require('./api/quizzes');
+const adminQuizRoutes = require('./admin/quizzes');
 const requireAuth = require('../middleware/requireAuth');
 const requireAdmin = require('../middleware/requireAdmin');
 
@@ -25,6 +26,11 @@ router.get('/results/:id', homeController.resultDetails);
 
 // Quiz page route
 router.get('/quiz.html', homeController.quiz);
+
+// Profile route (protected)
+router.get('/profile', requireAuth, async (req, res) => {
+    res.render('profile');
+});
 
 // Admin dashboard route (protected)
 router.get('/admin/dashboard', requireAuth, requireAdmin, (req, res) => {
@@ -54,6 +60,20 @@ router.get('/admin/students/:id/attempts', requireAuth, requireAdmin, async (req
     } catch (error) {
         next(error);
     }
+});
+
+// Admin quiz routes (protected)
+router.get('/admin/quizzes', requireAuth, requireAdmin, async (req, res) => {
+    res.render('admin/quizzes/index');
+});
+router.get('/admin/quizzes/create', requireAuth, requireAdmin, async (req, res) => {
+    res.render('admin/quizzes/form');
+});
+router.get('/admin/quizzes/:id', requireAuth, requireAdmin, async (req, res) => {
+    res.render('admin/quizzes/show');
+});
+router.get('/admin/quizzes/:id/edit', requireAuth, requireAdmin, async (req, res) => {
+    res.render('admin/quizzes/form');
 });
 
 // Placeholder for other admin routes (protected)

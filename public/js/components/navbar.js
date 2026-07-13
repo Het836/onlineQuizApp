@@ -16,6 +16,13 @@ window.Navbar = (function () {
         { href: '#', label: 'Logout', key: 'logout', id: 'logout-link' }
     ];
 
+    const ADMIN_LINKS = [
+        { href: '/admin/dashboard', label: 'Dashboard', key: 'dashboard' },
+        { href: '/admin/students', label: 'Manage Students', key: 'students' },
+        { href: '/admin/quizzes', label: 'Manage Quizzes', key: 'quizzes' },
+        { href: '#', label: 'Logout', key: 'logout', id: 'logout-link' }
+    ];
+
     function renderLink(link, activeKey) {
         const active = link.key === activeKey ? ' class="active"' : '';
         const id = link.id ? ` id="${link.id}"` : '';
@@ -85,6 +92,26 @@ window.Navbar = (function () {
         });
     }
 
+    async function enhanceAdminNavbar(navbarEl) {
+        try {
+            const resp = await fetch('/api/auth/me');
+            if (!resp.ok) return; // not authenticated, keep as is
+            const data = await resp.json();
+            const role = data.data?.role;
+            if (role === 'admin') {
+                const navLinks = navbarEl.querySelector('.nav-links');
+                if (!navLinks) return;
+                const activeKey = navbarEl.dataset.active || '';
+                navLinks.innerHTML = ADMIN_LINKS.map(link => renderLink(link, activeKey)).join('');
+                // Re-init mobile menu and logout listeners
+                initMobileMenu(navbarEl);
+                initLogout(navbarEl);
+            }
+        } catch (e) {
+            console.warn('Could not enhance navbar for admin:', e);
+        }
+    }
+
     function mount(target, options = {}) {
         const el = typeof target === 'string' ? document.querySelector(target) : target;
         if (!el) return;
@@ -99,6 +126,8 @@ window.Navbar = (function () {
 
         if (type === 'auth') {
             initLogout(navbarEl);
+            // Attempt to enhance to admin links if user is admin
+            enhanceAdminNavbar(navbarEl);
         }
     }
 
