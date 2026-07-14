@@ -8,6 +8,37 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .stats-flex, .actions-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-6);
+            justify-content: space-between;
+        }
+        .stats-flex .stat-card, .actions-flex .action-card {
+            flex: 1 1 calc(25% - var(--space-6));
+            max-width: calc(25% - var(--space-6));
+            box-sizing: border-box;
+        }
+        .actions-flex .action-card {
+            flex: 1 1 calc(33.333% - var(--space-6));
+            max-width: calc(33.333% - var(--space-6));
+        }
+        @media (max-width: 768px) {
+            .stats-flex .stat-card,
+            .actions-flex .action-card {
+                flex: 1 1 calc(50% - var(--space-6));
+                max-width: calc(50% - var(--space-6));
+            }
+        }
+        @media (max-width: 480px) {
+            .stats-flex .stat-card,
+            .actions-flex .action-card {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="navbar" data-nav="auth" data-active="dashboard"></div>
@@ -22,23 +53,23 @@
         </section>
 
         <!-- Statistics Cards -->
-        <section class="stats-section">
+        <section class="stats-section" style="margin-top: var(--space-8);">
             <h2 class="section-title">Overview</h2>
-            <div id="stats-container" class="stats-grid grid-4">
+            <div id="stats-container" class="stats-flex">
                 <!-- Stats will be injected here by JavaScript -->
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Loading...</h3>
                     <p class="stat-value">-</p>
                 </div>
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Loading...</h3>
                     <p class="stat-value">-</p>
                 </div>
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Loading...</h3>
                     <p class="stat-value">-</p>
                 </div>
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Loading...</h3>
                     <p class="stat-value">-</p>
                 </div>
@@ -46,22 +77,19 @@
         </section>
 
         <!-- Quick Action Cards -->
-        <section class="actions-section">
+        <section class="actions-section" style="margin-top: var(--space-8);">
             <h2 class="section-title">Quick Actions</h2>
-            <div id="actions-container" class="actions-grid grid-3">
+            <div id="actions-container" class="actions-flex">
                 <!-- Actions will be injected here by JavaScript -->
-                <a href="/admin/students" class="action-card card btn-block">
-                    <div class="action-icon">👥</div>
+                <a href="/admin/students" class="action-card card" style="padding: var(--space-6); text-align:center; display:block; text-decoration:none;">
                     <h3>Manage Students</h3>
                     <p>View and manage student accounts</p>
                 </a>
-                <a href="/admin/quizzes" class="action-card card btn-block">
-                    <div class="action-icon">📝</div>
+                <a href="/admin/quizzes" class="action-card card" style="padding: var(--space-6); text-align:center; display:block; text-decoration:none;">
                     <h3>Manage Quizzes</h3>
                     <p>Create and manage quizzes</p>
                 </a>
-                <a href="/admin/results" class="action-card card btn-block">
-                    <div class="action-icon">📊</div>
+                <a href="/admin/results" class="action-card card" style="padding: var(--space-6); text-align:center; display:block; text-decoration:none;">
                     <h3>View All Results</h3>
                     <p>See detailed quiz results</p>
                 </a>
@@ -69,26 +97,28 @@
         </section>
 
         <!-- Recent Activity -->
-        <section class="activity-section">
-            <h2 class="section-title">Recent Activity</h2>
+        <section class="activity-section" style="margin-top: var(--space-8);">
+            <h2 class="section-title" style="margin-bottom: var(--space-6);">Recent Activity</h2>
             <div id="activity-container" class="activity-card card">
-                <table class="activity-table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Quiz</th>
-                            <th>Score</th>
-                            <th>Percentage</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activity-body">
-                        <!-- Rows will be inserted here -->
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">Loading recent activity...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="overflow-x:auto;">
+                    <table class="activity-table" style="width: 100%; border-collapse: separate;">
+                        <thead>
+                            <tr>
+                                <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Student</th>
+                                <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Quiz</th>
+                                <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Score</th>
+                                <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Percentage</th>
+                                <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-body">
+                            <!-- Rows will be inserted here -->
+                            <tr>
+                                <td colspan="5" class="text-center text-muted" style="padding: var(--space-4);">Loading recent activity...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </main>
@@ -99,8 +129,8 @@
         </div>
     </footer>
 
-    <script src="/js/components/navbar.js"></script>
-    <script src="/js/main.js"></script>
+    <script src="/js/components/navbar.js?v=2"></script>
+    <script src="/js/main.js?v=2"></script>
     <script>
         // Admin Dashboard Logic
         async function loadDashboardData() {
@@ -124,19 +154,19 @@
         function updateStats(stats) {
             const statsContainer = document.getElementById('stats-container');
             statsContainer.innerHTML = `
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Total Students</h3>
                     <p class="stat-value">${stats.totalStudents}</p>
                 </div>
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Total Quizzes</h3>
                     <p class="stat-value">${stats.totalQuizzes}</p>
                 </div>
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Total Attempts</h3>
                     <p class="stat-value">${stats.totalAttempts}</p>
                 </div>
-                <div class="stat-card card">
+                <div class="stat-card card" style="padding: var(--space-6); text-align:center;">
                     <h3 class="stat-title">Average Score</h3>
                     <p class="stat-value">${stats.averageScore}%</p>
                 </div>
@@ -146,17 +176,17 @@
         function updateRecentActivity(attempts) {
             const tbody = document.getElementById('activity-body');
             if (attempts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No recent activity</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding: var(--space-4);">No recent activity</td></tr>';
                 return;
             }
 
             tbody.innerHTML = attempts.map(attempt => `
                 <tr>
-                    <td>${attempt.student_name}</td>
-                    <td>${attempt.quiz_title}</td>
-                    <td>${attempt.score}</td>
-                    <td>${attempt.percentage}</td>
-                    <td>${attempt.date}</td>
+                    <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.student_name}</td>
+                    <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.quiz_title}</td>
+                    <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.score}</td>
+                    <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.percentage}</td>
+                    <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.date}</td>
                 </tr>
             `).join('');
         }
@@ -173,7 +203,7 @@
             banner.style.color = '#d32f2f';
             banner.style.padding = '1rem';
             banner.style.marginBottom = '1rem';
-            banner.style.borderRadius = '4px';
+            borderRadius = '4px';
 
             const mainContent = document.getElementById('main-content');
             mainContent.insertBefore(banner, mainContent.firstChild);
@@ -181,6 +211,14 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+    <script>
+        // Ensure navbar is initialized (fallback if main.js didn't run)
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Navbar) {
+                Navbar.initAll();
+            }
+        });
     </script>
 </body>
 </html>

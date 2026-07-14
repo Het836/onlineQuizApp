@@ -8,6 +8,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .search-stats-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-6);
+            justify-content: space-between;
+            margin-top: var(--space-8);
+        }
+        .search-stats-flex > div {
+            flex: 1 1 calc(50% - var(--space-6));
+            max-width: calc(50% - var(--space-6));
+            box-sizing: border-box;
+        }
+        @media (max-width: 768px) {
+            .search-stats-flex > div {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+        .card {
+            padding: var(--space-6);
+        }
+        .activity-section {
+            margin-top: var(--space-8);
+        }
+    </style>
 </head>
 <body>
     <div id="navbar" data-nav="auth" data-active="students"></div>
@@ -23,13 +49,15 @@
 
         <!-- Search and Stats -->
         <section class="stats-section">
-            <div class="search-stats-container">
-                <div class="search-box">
-                    <input type="text" id="student-search" placeholder="Search by name or email...">
-                    <button id="search-btn" class="btn btn-primary">Search</button>
+            <div class="search-stats-flex">
+                <!-- Search Box -->
+                <div class="search-box card">
+                    <input type="text" id="student-search" placeholder="Search by name or email..." style="width:100%; padding:var(--space-4); border:1px solid var(--border); border-radius:var(--radius);">
+                    <button id="search-btn" class="btn btn-primary" style="margin-top:var(--space-4); width:100%;">Search</button>
                 </div>
-                <div class="stats-box">
-                    <p>Total Students: <span id="total-students">0</span></p>
+                <!-- Stats Box -->
+                <div class="stats-box card" style="text-align:center;">
+                    <p>Total Students: <span id="total-students" style="font-weight:600;">0</span></p>
                 </div>
             </div>
         </section>
@@ -37,26 +65,28 @@
         <!-- Students Table -->
         <section class="activity-section">
             <div id="students-container" class="activity-card card">
-                <table class="activity-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Registered On</th>
-                            <th>Quiz Attempts</th>
-                            <th>Average Score</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="students-body">
-                        <!-- Loading state -->
-                        <tr>
-                            <td colspan="6" class="text-center text-muted">Loading students...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="overflow-x:auto;">
+                    <table class="activity-table" style="width:100%; border-collapse:separate;">
+                        <thead>
+                            <tr>
+                                <th style="padding:var(--space-4); text-align:left; border-bottom:2px solid var(--border); background-color:var(--background); font-weight:600;">Name</th>
+                                <th style="padding:var(--space-4); text-align:left; border-bottom:2px solid var(--border); background-color:var(--background); font-weight:600;">Email</th>
+                                <th style="padding:var(--space-4); text-align:left; border-bottom:2px solid var(--border); background-color:var(--background); font-weight:600;">Registered On</th>
+                                <th style="padding:var(--space-4); text-align:left; border-bottom:2px solid var(--border); background-color:var(--background); font-weight:600;">Quiz Attempts</th>
+                                <th style="padding:var(--space-4); text-align:left; border-bottom:2px solid var(--border); background-color:var(--background); font-weight:600;">Average Score</th>
+                                <th style="padding:var(--space-4); text-align:left; border-bottom:2px solid var(--border); background-color:var(--background); font-weight:600;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-body">
+                            <!-- Loading state -->
+                            <tr>
+                                <td colspan="6" class="text-center text-muted" style="padding:var(--space-4);">Loading students...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
                 <!-- Pagination controls -->
-                <div id="pagination-controls" class="pagination-controls">
+                <div id="pagination-controls" class="pagination-controls" style="margin-top:var(--space-6); display:flex; justify-content:center; gap:var(--space-4);">
                     <button id="prev-page" class="btn btn-outline">← Previous</button>
                     <span id="page-info">Page 1 of 1</span>
                     <button id="next-page" class="btn btn-outline">Next →</button>
@@ -71,8 +101,8 @@
         </div>
     </footer>
 
-    <script src="/js/components/navbar.js"></script>
-    <script src="/js/main.js"></script>
+    <script src="/js/components/navbar.js?v=2"></script>
+    <script src="/js/main.js?v=2"></script>
     <script>
         // Student Management Logic
         let currentPage = 1;
@@ -103,18 +133,18 @@
             const tbody = document.getElementById('students-body');
 
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No students found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:var(--space-4);">No students found</td></tr>';
                 return;
             }
 
             tbody.innerHTML = students.map(student => `
                 <tr>
-                    <td>${student.full_name || 'N/A'}</td>
-                    <td>${student.email || 'N/A'}</td>
-                    <td>${new Date(student.registration_date).toLocaleDateString()}</td>
-                    <td>${student.total_quizzes_attempted || 0}</td>
-                    <td>${(student.average_score || 0).toFixed(2)}%</td>
-                    <td>
+                    <td style="padding:var(--space-4); border-bottom:1px solid var(--border);">${student.full_name || 'N/A'}</td>
+                    <td style="padding:var(--space-4); border-bottom:1px solid var(--border);">${student.email || 'N/A'}</td>
+                    <td style="padding:var(--space-4); border-bottom:1px solid var(--border);">${new Date(student.registration_date).toLocaleDateString()}</td>
+                    <td style="padding:var(--space-4); border-bottom:1px solid var(--border);">${student.total_quizzes_attempted || 0}</td>
+                    <td style="padding:var(--space-4); border-bottom:1px solid var(--border);">${(student.average_score || 0).toFixed(2)}%</td>
+                    <td style="padding:var(--space-4); border-bottom:1px solid var(--border);">
                         <a href="/admin/students/${student.id}" class="btn btn-sm btn-outline">View Profile</a>
                         <a href="/admin/students/${student.id}/attempts" class="btn btn-sm btn-outline">View Attempts</a>
                     </td>
@@ -143,7 +173,7 @@
             banner.style.color = '#d32f2f';
             banner.style.padding = '1rem';
             banner.style.marginBottom = '1rem';
-            borderRadius = '4px';
+            banner.style.borderRadius = '4px';
 
             const mainContent = document.getElementById('main-content');
             mainContent.insertBefore(banner, mainContent.firstChild);
@@ -183,6 +213,14 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             loadStudents();
+        });
+    </script>
+<script>
+        // Ensure navbar is initialized (fallback if main.js didn't run)
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Navbar) {
+                Navbar.initAll();
+            }
         });
     </script>
 </body>

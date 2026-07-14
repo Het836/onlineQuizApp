@@ -95,8 +95,8 @@
         </div>
     </footer>
 
-    <script src="/js/components/navbar.js"></script>
-    <script src="/js/main.js"></script>
+    <script src="/js/components/navbar.js?v=2"></script>
+    <script src="/js/main.js?v=2"></script>
     <script>
         // Get student ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -198,6 +198,14 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', loadStudentProfile);
+    </script>
+<script>
+        // Ensure navbar is initialized (fallback if main.js didn't run)
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Navbar) {
+                Navbar.initAll();
+            }
+        });
     </script>
 </body>
 </html>

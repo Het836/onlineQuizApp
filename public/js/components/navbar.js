@@ -3,6 +3,8 @@
  * Renders guest or authenticated navigation and wires mobile menu + logout.
  */
 window.Navbar = (function () {
+    console.log('navbar.js loaded');
+    console.log('Navbar module loaded');
     const GUEST_LINKS = [
         { href: '/', label: 'Home', key: 'home' },
         { href: '/login', label: 'Login', key: 'login' },
@@ -51,20 +53,27 @@ window.Navbar = (function () {
     }
 
     function initMobileMenu(navbarEl) {
+        console.log('Navbar: initMobileMenu called');
         const toggle = navbarEl.querySelector('.menu-toggle');
         const navLinks = navbarEl.querySelector('.nav-links');
+        console.log('Navbar: toggle found:', toggle, 'navLinks found:', navLinks);
 
-        if (!toggle || !navLinks) return;
+        if (!toggle || !navLinks) {
+            console.warn('Navbar: missing toggle or navLinks');
+            return;
+        }
 
         toggle.addEventListener('click', () => {
             const isOpen = navLinks.classList.toggle('open');
             toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            console.log('Navbar: toggle clicked, open:', isOpen);
         });
 
         navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('open');
                 toggle.setAttribute('aria-expanded', 'false');
+                console.log('Navbar: nav link clicked, menu closed');
             });
         });
     }
@@ -113,8 +122,12 @@ window.Navbar = (function () {
     }
 
     function mount(target, options = {}) {
+        console.log('Navbar: mount called', target, options);
         const el = typeof target === 'string' ? document.querySelector(target) : target;
-        if (!el) return;
+        if (!el) {
+            console.warn('Navbar: target element not found', target);
+            return;
+        }
 
         const type = options.type || el.dataset.nav || 'guest';
         const activeKey = options.active || el.dataset.active || '';
@@ -122,6 +135,7 @@ window.Navbar = (function () {
         el.innerHTML = render(type, activeKey);
 
         const navbarEl = el.querySelector('.navbar') || el;
+        console.log('Navbar: navbarEl:', navbarEl);
         initMobileMenu(navbarEl);
 
         if (type === 'auth') {
@@ -132,6 +146,7 @@ window.Navbar = (function () {
     }
 
     function initAll() {
+        console.log('Navbar: initAll called');
         document.querySelectorAll('[data-nav]').forEach(el => mount(el));
     }
 

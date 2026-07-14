@@ -8,6 +8,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .profile-table tbody tr {
+            border-bottom: 1px solid var(--border);
+        }
+        .profile-table tbody tr:hover {
+            background-color: var(--primary-light);
+        }
+        .profile-table tbody td {
+            padding: var(--space-4);
+            vertical-align: middle;
+        }
+    </style>
 </head>
 <body>
     <div id="navbar" data-nav="auth" data-active="profile"></div>
@@ -17,39 +29,48 @@
         <section class="profile-header">
             <div class="profile-header-content">
                 <h1>My Profile</h1>
+                <p class="welcome-message text-secondary">View and update your account information</p>
             </div>
         </section>
 
         <!-- Profile Info -->
-        <section class="profile-info-section">
+        <section class="profile-info-section" style="margin-top: var(--space-8);">
             <div id="profile-loading">
                 <p>Loading profile...</p>
             </div>
             <div id="profile-content" style="display: none;">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <h3>Full Name</h3>
-                        <p id="profile-full-name"></p>
-                    </div>
-                    <div class="info-item">
-                        <h3>Email</h3>
-                        <p id="profile-email"></p>
-                    </div>
-                    <div class="info-item">
-                        <h3>Registration Date</h3>
-                        <p id="profile-registered-on"></p>
-                    </div>
-                    <div class="info-item">
+                <div class="stats-row">
+                    <div class="stats-card">
                         <h3>Total Quizzes Attempted</h3>
-                        <p id="profile-total-attempts"></p>
+                        <div class="value" id="profile-total-attempts">0</div>
                     </div>
-                    <div class="info-item">
+                    <div class="stats-card">
                         <h3>Average Score</h3>
-                        <p id="profile-average-score"></p>
+                        <div class="value" id="profile-average-score">0%</div>
                     </div>
-                    <div class="info-item">
+                    <div class="stats-card">
                         <h3>Highest Score</h3>
-                        <p id="profile-highest-score"></p>
+                        <div class="value" id="profile-highest-score">0</div>
+                    </div>
+                </div>
+
+                <div class="profile-grid" style="margin-top: var(--space-8);">
+                    <div class="profile-card">
+                        <h3>Account Information</h3>
+                        <div class="profile-info">
+                            <div class="profile-info-item">
+                                <label>Full Name</label>
+                                <span class="value" id="profile-full-name">N/A</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <label>Email</label>
+                                <span class="value" id="profile-email">N/A</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <label>Registration Date</label>
+                                <span class="value" id="profile-registered-on">N/A</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -57,36 +78,38 @@
         </section>
 
         <!-- Recent Attempts -->
-        <section class="recent-attempts-section">
+        <section class="recent-attempts-section" style="margin-top: var(--space-8);">
             <div id="recent-attempts-loading">
                 <p>Loading recent attempts...</p>
             </div>
             <div id="recent-attempts-content" style="display: none;">
-                <h2>Recent Attempts</h2>
-                <div id="recent-attempts-table-wrapper">
-                    <table id="recent-attempts-table" class="activity-table">
-                        <thead>
-                            <tr>
-                                <th>Quiz Title</th>
-                                <th>Score</th>
-                                <th>Percentage</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recent-attempts-body">
-                            <!-- Rows will be inserted here -->
-                        </tbody>
-                    </table>
+                    <div id="recent-attempts-table-wrapper">
+                        <div style="overflow-x: auto; margin-top: var(--space-6);">
+                            <table id="recent-attempts-table" class="activity-table profile-table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Quiz Title</th>
+                                        <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Score</th>
+                                        <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Percentage</th>
+                                        <th style="padding: var(--space-4); text-align: left; border-bottom: 2px solid var(--border); background-color: var(--background); font-weight: 600;">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-attempts-body">
+                                    <!-- Rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="recent-attempts-empty" class="text-center text-muted" style="display: none;">
+                        <p>No recent attempts found.</p>
+                    </div>
+                    <div id="recent-attempts-error" class="error-message" style="display: none;"></div>
                 </div>
-                <div id="recent-attempts-empty" class="text-center text-muted" style="display: none;">
-                    <p>No recent attempts found.</p>
-                </div>
-                <div id="recent-attempts-error" class="error-message" style="display: none;"></div>
             </div>
         </section>
 
         <!-- Edit Profile Button -->
-        <section class="profile-actions">
+        <section class="profile-actions" style="margin-top: var(--space-8);">
             <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
         </section>
 
@@ -103,8 +126,8 @@
                     <input type="email" id="edit-email" required>
                 </div>
                 <div class="form-actions">
-                    <button id="save-profile-btn" class="btn btn-primary">Save</button>
-                    <button id="cancel-edit-btn" class="btn btn-outline">Cancel</button>
+                    <button id="save-profile-btn" class="btn btn-primary w-full">Save</button>
+                    <button id="cancel-edit-btn" class="btn btn-outline w-full">Cancel</button>
                 </div>
                 <div id="edit-profile-error" class="error-message" style="display: none;"></div>
                 <div id="edit-profile-success" class="success-message" style="display: none;"></div>
@@ -184,10 +207,10 @@ document.getElementById('recent-attempts-content').style.display = 'block';
             tbody.innerHTML = recentAttempts.map(attempt => {
                 return `
                     <tr>
-                        <td>${attempt.quiz_title || 'N/A'}</td>
-                        <td>${attempt.score !== null ? attempt.score : 'N/A'}</td>
-                        <td>${attempt.percentage !== null ? attempt.percentage.toFixed(2) + '%' : 'N/A'}</td>
-                        <td>${attempt.date || ''}</td>
+                        <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.quiz_title || 'N/A'}</td>
+                        <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.score !== null ? attempt.score : 'N/A'}</td>
+                        <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.percentage !== null ? attempt.percentage.toFixed(2) + '%' : 'N/A'}</td>
+                        <td style="padding: var(--space-4); border-bottom: 1px solid var(--border);">${attempt.date || ''}</td>
                     </tr>
                 `;
             }).join('');

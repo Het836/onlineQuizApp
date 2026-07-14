@@ -1,8 +1,16 @@
 // Main JavaScript for Online Quiz System
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOMContentLoaded fired, main.js');
     // Initialize shared navbar on pages with data-nav attribute
     if (window.Navbar) {
-        Navbar.initAll();
+        console.log('Initializing navbar');
+        try {
+            Navbar.initAll();
+        } catch (e) {
+            console.error('Error initializing navbar:', e);
+        }
+    } else {
+        console.warn('window.Navbar not found');
     }
 
     // Active state for statically rendered nav links (pages without data-nav)

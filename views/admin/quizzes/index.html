@@ -8,27 +8,113 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .search-stats-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-6);
+            justify-content: space-between;
+            margin-top: var(--space-8);
+        }
+        .search-stats-flex > div {
+            flex: 1 1 calc(50% - var(--space-6));
+            max-width: calc(50% - var(--space-6));
+            box-sizing: border-box;
+        }
+        @media (max-width: 768px) {
+            .search-stats-flex > div {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+        .card {
+            padding: var(--space-6);
+        }
+        .quiz-table-section {
+            margin-top: var(--space-8);
+        }
+        /* Style for inputs and selects inside cards */
+        .search-box input, .search-box select {
+            width: 100%;
+            padding: var(--space-4);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: var(--space-4);
+            font-size: 1rem;
+        }
+        .search-box select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em;
+        }
+        .search-box .btn-primary {
+            width: 100%;
+        }
+        /* Stats box styling */
+        .stats-box {
+            text-align: center;
+        }
+        .stats-box .btn-primary {
+            margin-top: var(--space-4);
+            width: 100%;
+        }
+        /* Table headers */
+        .quiz-table th {
+            padding: var(--space-4);
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            background-color: var(--background);
+            font-weight: 600;
+        }
+        .quiz-table td {
+            padding: var(--space-4);
+            border-bottom: 1px solid var(--border);
+        }
+        /* Status badges */
+        .status-active {
+            background-color: var(--success-light);
+            color: #15803d;
+        }
+        .status-inactive {
+            background-color: var(--danger-light);
+            color: #b91c1c;
+        }
+        /* Ensure actions cell has some spacing */
+        .actions-cell {
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
     <div id="navbar" data-nav="auth" data-active="quizzes"></div>
 
     <main id="main-content" class="container page">
         <!-- Page Header -->
-        <section class="quiz-header">
-            <div class="quiz-header-content">
+        <section class="dashboard-header">
+            <div class="dashboard-user-info">
                 <h1>Manage Quizzes</h1>
-                <div class="quiz-header-actions">
-                    <div class="search-filter">
-                        <input type="text" id="quizSearch" placeholder="Search quizzes...">
-                        <select id="quizFilter">
-                            <option value="all">All</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="quiz-count">
-                        <span id="totalQuizCount">0</span> quizzes
-                    </div>
+                <p class="welcome-message text-secondary">Create, edit, and manage quizzes</p>
+            </div>
+        </section>
+
+        <!-- Search and Stats -->
+        <section class="stats-section">
+            <div class="search-stats-flex">
+                <!-- Search Box -->
+                <div class="search-box card">
+                    <input type="text" id="quizSearch" placeholder="Search quizzes...">
+                    <select id="quizFilter">
+                        <option value="all">All</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <button id="searchBtn" class="btn btn-primary">Search</button>
+                </div>
+                <!-- Stats Box -->
+                <div class="stats-box card">
+                    <p>Total Quizzes: <span id="totalQuizCount" style="font-weight:600;">0</span></p>
                     <a href="/admin/quizzes/create" class="btn btn-primary">Create Quiz</a>
                 </div>
             </div>
@@ -36,26 +122,28 @@
 
         <!-- Quizzes Table -->
         <section class="quiz-table-section">
-            <div class="table-responsive">
-                <table class="quiz-table">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Description</th>
-                            <th>Total Questions</th>
-                            <th>Duration (min)</th>
-                            <th>Status</th>
-                            <th>Created Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="quizTableBody">
-                        <!-- Rows will be injected by JavaScript -->
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">Loading quizzes...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div id="quizTableContainer" class="quiz-table-section card">
+                <div style="overflow-x:auto;">
+                    <table class="quiz-table" style="width:100%; border-collapse:separate;">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Total Questions</th>
+                                <th>Duration (min)</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quizTableBody">
+                            <!-- Rows will be injected by JavaScript -->
+                            <tr>
+                                <td colspan="7" class="text-center text-muted" style="padding:var(--space-4);">Loading quizzes...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </main>
@@ -66,8 +154,8 @@
         </div>
     </footer>
 
-    <script src="/js/components/navbar.js"></script>
-    <script src="/js/main.js"></script>
+    <script src="/js/components/navbar.js?v=2"></script>
+    <script src="/js/main.js?v=2"></script>
     <script>
         // Quiz Management Logic
         async function loadQuizzes() {
@@ -91,7 +179,7 @@
         function renderQuizTable(quizzes) {
             const tbody = document.getElementById('quizTableBody');
             if (quizzes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No quizzes found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-4);">No quizzes found</td></tr>';
                 return;
             }
 
@@ -118,8 +206,8 @@
                 }
                 return `
                     <tr data-quiz-id="${quiz.id}">
-                        <td>${escapeHtml(quiz.title)}</td>
-                        <td>${escapeHtml(quiz.description)}</td>
+                        <td>${quiz.title}</td>
+                        <td>${quiz.description}</td>
                         <td>${quiz.total_questions || 0}</td>
                         <td>${quiz.duration_minutes}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -187,7 +275,7 @@
                 '"': '"',
                 "'": '&#039;'
             };
-            return String(text).replace(/[&<>'"]/g, m => map[m]);
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
         async function deleteQuiz(quizId) {
@@ -250,8 +338,69 @@
             mainContent.insertBefore(banner, mainContent.firstChild);
         }
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', loadQuizzes);
+        // Search and filter functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizzes();
+
+            const searchBtn = document.getElementById('searchBtn');
+            const quizSearch = document.getElementById('quizSearch');
+            const quizFilter = document.getElementById('quizFilter');
+
+            // Search on button click
+            searchBtn.addEventListener('click', () => {
+                const searchTerm = quizSearch.value.trim();
+                const filterValue = quizFilter.value;
+                loadQuizzesFiltered(searchTerm, filterValue);
+            });
+
+            // Search on Enter key
+            quizSearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const searchTerm = quizSearch.value.trim();
+                    const filterValue = quizFilter.value;
+                    loadQuizzesFiltered(searchTerm, filterValue);
+                }
+            });
+
+            // Filter change
+            quizFilter.addEventListener('change', () => {
+                const searchTerm = quizSearch.value.trim();
+                const filterValue = quizFilter.value;
+                loadQuizzesFiltered(searchTerm, filterValue);
+            });
+        });
+
+        async function loadQuizzesFiltered(searchTerm = '', filterValue = 'all') {
+            try {
+                let url = '/api/admin/quizzes?';
+                const params = [];
+                if (searchTerm) params.push(`search=${encodeURIComponent(searchTerm)}`);
+                if (filterValue !== 'all') params.push(`status=${filterValue}`);
+                url += params.join('&');
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to load quizzes');
+                }
+
+                const quizzes = data.data;
+                renderQuizTable(quizzes);
+                updateQuizCount(quizzes.length);
+            } catch (error) {
+                console.error('Error loading filtered quizzes:', error);
+                showError('Failed to load quizzes: ' + error.message);
+            }
+        }
+    </script>
+    <script>
+        // Ensure navbar is initialized (fallback if main.js didn't run)
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Navbar) {
+                Navbar.initAll();
+            }
+        });
     </script>
 </body>
 </html>
