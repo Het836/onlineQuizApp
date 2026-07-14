@@ -95,14 +95,29 @@
             width: 1.5rem;
             height: 1.5rem;
         }
-        .option-row .form-control {
+        .option-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            width: 100%;
+        }
+        .option-controls .form-control {
             flex: none;
             width: auto;
             min-width: 0;
             padding: var(--space-4);
         }
-        .option-row .btn {
+        .option-controls .btn {
             /* keep default button size */
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .question-header h4 {
+            margin: 0;
+            font-size: 1.25rem;
         }
         /* Responsive adjustments */
         @media (max-width: 768px) {
